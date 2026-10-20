@@ -91,7 +91,10 @@ create policy "scans: insert for own target" on public.scans
     and exists (select 1 from public.targets t where t.id = target_id and t.user_id = auth.uid())
   );
 create policy "scans: update own" on public.scans
-  for update using (user_id = auth.uid()) with check (user_id = auth.uid());
+  for update using (user_id = auth.uid()) with check (
+    user_id = auth.uid()
+    and exists (select 1 from public.targets t where t.id = target_id and t.user_id = auth.uid())
+  );
 create policy "scans: delete own" on public.scans
   for delete using (user_id = auth.uid());
 
