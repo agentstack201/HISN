@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HISN (حِصن) — Web Application Security Assessment Platform
 
-## Getting Started
+HISN is a Computing Diploma graduation project. Users register, add websites they own (or are authorized to test), and run a **basic, non-intrusive security assessment**. Every finding shows the evidence observed, a severity, and how to fix it. Results are saved, can be compared over time, and can be downloaded as a PDF report.
 
-First, run the development server:
+**Stack:** Next.js 15 (App Router) · TypeScript · React 19 · Tailwind CSS 4 · Supabase (PostgreSQL, Auth, Row Level Security) · Zod · pdf-lib · Vitest · Playwright.
+
+## What the scanner checks
+
+| Area | Checks |
+|------|--------|
+| HTTPS / TLS | HTTPS used, HTTP→HTTPS redirect, certificate trusted, certificate expiry |
+| Security headers | Content-Security-Policy, Strict-Transport-Security, X-Content-Type-Options, Referrer-Policy, Permissions-Policy |
+| Cookies | Secure, HttpOnly, SameSite on observed cookies (cookie values are never stored) |
+| Misconfigurations | Version disclosure, clickjacking protection, directory listing, permissive CORS with credentials |
+
+It is **not** a penetration-testing tool: no attacks, no crawling, no port scanning. See [docs/security.md](docs/security.md).
+
+## Quick start
+
+Requirements: Node.js 20+ and a free Supabase project.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local      # fill in your Supabase URL and anon key
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. In the Supabase dashboard → **SQL Editor**, run `supabase/migrations/20261020000000_initial_schema.sql` (or `supabase db push` with the Supabase CLI).
+2. Supabase → Authentication → URL configuration: set the Site URL to your app URL (e.g. `http://localhost:3000`).
+3. For a local demo, set `LIVE_SCANNING_ENABLED=true` in `.env.local` (see "Live scanning" below).
+4. Run `npm run dev` and open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Without Supabase variables the public pages work and protected pages show a setup notice.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts
 
-## Learn More
+| Command | What it does |
+|---------|--------------|
+| `npm run dev` | Development server |
+| `npm run build` / `npm start` | Production build / server |
+| `npm run lint` · `npm run typecheck` | ESLint · TypeScript |
+| `npm test` | Unit + scanner tests (Vitest) |
+| `npm run test:rls` | Migration + RLS tests on a local PostgreSQL (`su postgres -c "npm run test:rls"`) |
+| `npm run e2e` | Browser tests of public pages, headers and PWA (needs `npm run build` first) |
 
-To learn more about Next.js, take a look at the following resources:
+## Live scanning
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Scanning is **off by default**. It only runs when `LIVE_SCANNING_ENABLED=true`. Turn it on only in an environment where you have verified the protections in [docs/security.md](docs/security.md) (SSRF blocking, rate limits, timeouts). Each scan runs on the server and needs internet access.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deployment
 
-## Deploy on Vercel
+The app is a standard Next.js app and can be deployed to any Node.js host (e.g. Vercel). Set the three environment variables from `.env.example` in the host's settings. No service-role key is needed. Deployment has **not** been performed yet — see [docs/project-status.md](docs/project-status.md).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+app/                 pages, layout, server actions (actions.ts), PDF route
+components/          shared UI (badges, forms, auth form, service-worker registration)
+lib/targets.ts       URL validation + SSRF-safe HTTP requests
+lib/security-checks.ts  the individual checks (pure functions)
+lib/scanner.ts       runs a scan and collects findings
+lib/reports.ts       loads a scan and builds the PDF
+lib/validation.ts    Zod schemas for all forms
+lib/i18n.ts          English / Arabic text
+lib/supabase/        Supabase server client + auth helper
+middleware.ts        refreshes the login session cookie
+supabase/migrations/ database schema + RLS policies
+public/              manifest, service worker, offline page, icons
+tests/  e2e/         automated tests
+docs/                documentation
+```
+
+## Documentation
+
+- [Requirements & checklist](docs/requirements.md) · [Architecture](docs/architecture.md) · [Security](docs/security.md) · [Threat model](docs/threat-model.md)
+- [Test plan & results](docs/test-plan.md) · [Project status](docs/project-status.md) · [Decisions](docs/decisions.md)
+- [Demonstration guide & viva preparation](docs/demo-and-viva.md)
+
+## Responsible use
+
+Only scan websites you own or have written permission to test. HISN finding no issues does **not** mean a website is completely secure.

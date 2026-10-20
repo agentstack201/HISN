@@ -21,6 +21,8 @@ vi.mock("node:net", async (orig) => {
   const real = (await orig()) as typeof import("node:net");
   // Allow loopback only; everything else uses the real block list.
   const BlockList = class extends real.BlockList {
+    check(ip: string, type?: "ipv4" | "ipv6"): boolean;
+    check(ip: never): boolean;
     check(ip: string, type?: "ipv4" | "ipv6") {
       return ip === "127.0.0.1" ? false : super.check(ip, type);
     }
