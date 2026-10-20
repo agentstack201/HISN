@@ -7,6 +7,8 @@ export default async function HelpPage() {
   return (
     <div className="max-w-3xl space-y-6">
       <h1 className="text-3xl font-semibold">{t.nav.help}</h1>
+      {/* Help text is English-only for now; mark it LTR so punctuation renders correctly in the Arabic layout. */}
+      <div lang="en" dir="ltr" className="space-y-6 text-left">
       <section className="card space-y-2">
         <h2 className="text-lg font-semibold">What does a scan do?</h2>
         <p className="text-muted">
@@ -33,6 +35,7 @@ export default async function HelpPage() {
         <h2 className="text-lg font-semibold">Contact</h2>
         <p className="text-muted">HISN is a diploma graduation project. For questions, contact the project team through your course supervisor.</p>
       </section>
+      </div>
     </div>
   );
 }

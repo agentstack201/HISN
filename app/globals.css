@@ -10,6 +10,9 @@
   --color-muted: #9fb0c8;
   --color-teal: #2bb3a3;
   --color-teal-strong: #5fd4c5;
+  --color-cyan: #22d3ee; /* electric cyan from the fortress lighting */
+  --color-stone: #bdb6aa; /* architectural stone */
+  --color-warm: #e9a85c; /* small warm light accents */
   --font-sans: var(--font-plex), "Segoe UI", Tahoma, sans-serif;
 }
 
@@ -22,6 +25,10 @@ body {
 @layer components {
   .card { @apply rounded-lg border border-navy-700 bg-navy-900 p-5; }
   .btn { @apply inline-flex items-center justify-center gap-2 rounded-md bg-teal px-4 py-2 text-sm font-semibold text-navy-950 hover:bg-teal-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-strong disabled:opacity-60; }
+  /* Large homepage buttons. */
+  .btn-hero { @apply inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-cyan px-7 py-3 text-base font-bold text-navy-950 shadow-[0_0_28px_-6px_var(--color-cyan)] transition hover:bg-[#67e8f9] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan; }
+  .btn-hero-ghost { @apply inline-flex min-h-12 items-center justify-center gap-3 rounded-full border border-white/20 bg-navy-950/50 px-7 py-3 text-base font-semibold text-ink transition hover:border-cyan focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan; }
+  .eyebrow { @apply text-sm font-semibold text-cyan; }
   .btn-ghost { @apply inline-flex items-center justify-center rounded-md border border-navy-700 px-4 py-2 text-sm text-ink hover:border-teal; }
   .btn-danger { @apply inline-flex items-center justify-center rounded-md border border-red-400/50 px-4 py-2 text-sm text-red-300 hover:bg-red-400/10; }
   .input { @apply w-full rounded-md border border-navy-700 bg-navy-950 px-3 py-2 text-ink placeholder:text-muted/60 focus:border-teal focus:outline-none; }
@@ -33,3 +40,9 @@ body {
 }
 
 [dir="rtl"] .table { text-align: right; }
+
+/* Smooth in-page scrolling for the homepage anchors, unless reduced motion is preferred. */
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+section[id] { scroll-margin-top: 6rem; }

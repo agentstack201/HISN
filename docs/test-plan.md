@@ -20,13 +20,16 @@ Last run: 2026-10-20, in the development container (Node 22, PostgreSQL 16, Chro
 | Public pages, RTL switch, no horizontal scroll (1280 px and 375 px) | `npm run e2e` | PASS |
 | HISN security headers, manifest, icons, SW no-cache | `npm run e2e` | PASS |
 | Service worker registration + offline page | `npm run e2e` (desktop Chromium) | PASS |
+| Homepage video: muted, loop, playsInline, actually playing (WebM), pause button, reduced-motion no-autoplay | `npm run e2e` | PASS |
+| Homepage links/anchors all resolve; Arabic RTL default | `npm run e2e` | PASS |
+| Homepage visual check at 1440/1280/768/390 px | Playwright screenshots, reviewed | PASS |
 | Registration, login, logout, session handling | needs Supabase project | BLOCKED |
 | Target CRUD, scan persistence, dashboard, history, compare, PDF download route | needs Supabase project | BLOCKED |
 | Rate limit (6th scan refused) | needs Supabase project | BLOCKED |
 | PWA install prompt on a real phone | needs deployment over HTTPS | BLOCKED |
 | Accessibility | partial: semantic HTML, labels, skip link, focus styles, role=alert/status; no automated audit yet | PARTIAL |
 
-Totals: Vitest 54/54 passed; Playwright 9 passed, 1 skipped (offline test runs on desktop only); RLS 10/10 passed.
+Totals: Vitest 54/54 passed; Playwright 19 passed, 5 skipped (desktop-only screenshot/offline tests); RLS 10/10 passed.
 
 ## Manual test checklist once Supabase is connected
 

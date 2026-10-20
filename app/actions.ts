@@ -48,7 +48,7 @@ export async function signOut() {
 // ---------- Settings ----------
 
 export async function setLanguage(form: FormData) {
-  const lang = form.get("lang") === "ar" ? "ar" : "en";
+  const lang = form.get("lang") === "en" ? "en" : "ar";
   (await cookies()).set("lang", lang, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
   revalidatePath("/", "layout");
 }
