@@ -85,3 +85,28 @@ test("service worker registers and offline page is shown without network", async
   await expect(page.getByRole("heading", { name: "You are offline" })).toBeVisible();
   await context.setOffline(false);
 });
+
+test("click sound plays on buttons and can be switched off (remembered)", async ({ page }) => {
+  // Count generated tones by wrapping AudioContext.createOscillator.
+  await page.addInitScript(() => {
+    (window as unknown as { tones: number }).tones = 0;
+    const original = AudioContext.prototype.createOscillator;
+    AudioContext.prototype.createOscillator = function () {
+      (window as unknown as { tones: number }).tones++;
+      return original.call(this);
+    };
+  });
+  await page.goto("/");
+  const tones = () => page.evaluate(() => (window as unknown as { tones: number }).tones);
+  const toggle = page.getByRole("button", { name: "إيقاف صوت النقر" });
+  await expect(toggle).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "إيقاف الفيديو الخلفي" }).click();
+  expect(await tones()).toBeGreaterThan(0);
+
+  await toggle.click(); // turn off
+  const before = await tones();
+  await page.getByRole("button", { name: "تشغيل الفيديو الخلفي" }).click();
+  expect(await tones()).toBe(before);
+  await page.reload();
+  await expect(page.getByRole("button", { name: "تشغيل صوت النقر" })).toHaveAttribute("aria-pressed", "false");
+});

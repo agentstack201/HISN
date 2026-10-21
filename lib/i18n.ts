@@ -8,7 +8,7 @@ import { cookies } from "next/headers";
 const en = {
   appName: "HISN",
   tagline: "Web application security assessment for websites you own",
-  nav: { home: "Home", features: "Features", how: "How it works", resources: "Resources", about: "About", start: "Get started", menu: "Menu", dashboard: "Dashboard", targets: "Targets", scans: "Scan history", settings: "Settings", help: "Help", login: "Log in", register: "Register", logout: "Log out" },
+  nav: { home: "Home", features: "Features", how: "How it works", resources: "Resources", about: "About", start: "Get started", menu: "Menu", dashboard: "Dashboard", targets: "Targets", scans: "Scan history", settings: "Settings", help: "Help", login: "Log in", register: "Register", logout: "Log out", soundOn: "Turn click sounds on", soundOff: "Turn click sounds off" },
   home: {
     eyebrow: "From assessment to assurance",
     title1: "Protection today,",
@@ -64,7 +64,7 @@ type Dict = typeof en;
 const ar: Dict = {
   appName: "حِصن",
   tagline: "تقييم أمن تطبيقات الويب للمواقع التي تملكها",
-  nav: { home: "الرئيسية", features: "المميزات", how: "كيف يعمل", resources: "الموارد", about: "من نحن", start: "ابدأ الآن", menu: "القائمة", dashboard: "لوحة التحكم", targets: "المواقع", scans: "سجل الفحوصات", settings: "الإعدادات", help: "المساعدة", login: "تسجيل الدخول", register: "إنشاء حساب", logout: "تسجيل الخروج" },
+  nav: { home: "الرئيسية", features: "المميزات", how: "كيف يعمل", resources: "الموارد", about: "من نحن", start: "ابدأ الآن", menu: "القائمة", dashboard: "لوحة التحكم", targets: "المواقع", scans: "سجل الفحوصات", settings: "الإعدادات", help: "المساعدة", login: "تسجيل الدخول", register: "إنشاء حساب", logout: "تسجيل الخروج", soundOn: "تشغيل صوت النقر", soundOff: "إيقاف صوت النقر" },
   home: {
     eyebrow: "من الفحص إلى الأمان",
     title1: "حماية اليوم،",

@@ -6,11 +6,12 @@
 import Link from "next/link";
 import { setLanguage, signOut } from "@/app/actions";
 import type { Lang } from "@/lib/i18n";
+import ClickSound from "./ClickSound";
 
 interface Props {
   lang: Lang;
   loggedIn: boolean;
-  t: Record<"home" | "features" | "how" | "resources" | "about" | "start" | "menu" | "dashboard" | "targets" | "scans" | "settings" | "login" | "logout", string>;
+  t: Record<"home" | "features" | "how" | "resources" | "about" | "start" | "menu" | "dashboard" | "targets" | "scans" | "settings" | "login" | "logout" | "soundOn" | "soundOff", string>;
   appName: string;
 }
 
@@ -57,8 +58,11 @@ export default function SiteHeader({ lang, loggedIn, t, appName }: Props) {
         </ul>
         <div className="hidden items-center gap-3 lg:flex">{languageSwitch}{account}</div>
 
+        {/* Sound on/off switch, visible on every screen size (one instance only). */}
+        <div className="ms-auto lg:ms-0"><ClickSound onLabel={t.soundOn} offLabel={t.soundOff} /></div>
+
         {/* Mobile and tablet menu */}
-        <details className="group relative ms-auto lg:hidden">
+        <details className="group relative lg:hidden">
           <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-full border border-white/15 bg-navy-950/60 px-4 text-sm focus-visible:outline-2 focus-visible:outline-cyan [&::-webkit-details-marker]:hidden">
             <svg aria-hidden width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
             {t.menu}
