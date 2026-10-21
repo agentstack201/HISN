@@ -46,10 +46,10 @@ export default async function Home() {
 
         <div className="relative z-10 mx-auto flex max-w-7xl px-4 pb-14 sm:px-6 lg:min-h-[100svh] lg:items-center lg:pb-40 lg:pt-28">
           <div className="-mt-10 max-w-xl space-y-6 lg:mt-0">
-            <p className="eyebrow">{h.eyebrow}</p>
+            <p className="eyebrow-pill">{h.eyebrow}</p>
             <h1 className="text-4xl font-bold leading-[1.25] sm:text-5xl xl:text-6xl">
               <span className="block text-ink">{h.title1}</span>
-              <span className="block text-cyan">{h.title2}</span>
+              <span className="block text-gradient pb-1">{h.title2}</span>
             </h1>
             <p className="text-lg leading-relaxed text-ink/80">{h.intro}</p>
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -63,8 +63,8 @@ export default async function Home() {
         <div id="features" className="relative z-10 mx-auto max-w-7xl px-4 pb-10 sm:px-6 lg:absolute lg:inset-x-0 lg:bottom-8 lg:pb-0">
           <ul className="grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-2 lg:grid-cols-4">
             {h.capabilities.map(([title, text], i) => (
-              <li key={title} className="flex gap-4 bg-navy-950/85 p-5">
-                <svg aria-hidden className="mt-0.5 size-7 shrink-0 text-cyan" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">{icons[i]}</svg>
+              <li key={title} className="group flex gap-4 bg-navy-950/85 p-5 backdrop-blur transition duration-300 hover:bg-navy-900/95">
+                <svg aria-hidden className="mt-0.5 size-7 shrink-0 text-cyan transition duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_var(--color-cyan)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">{icons[i]}</svg>
                 <div>
                   <h2 className="font-semibold text-ink">{title}</h2>
                   <p className="mt-1 text-sm leading-relaxed text-muted">{text}</p>
@@ -76,21 +76,30 @@ export default async function Home() {
       </section>
 
       {/* ---------- Dashboard preview ---------- */}
-      <section className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[2fr_3fr]">
-        <div className="space-y-4">
-          <p className="eyebrow">{h.previewEyebrow}</p>
+      <section className="relative isolate">
+      <div aria-hidden className="bg-grid pointer-events-none absolute inset-0 -z-10" />
+      <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-24 sm:px-6 lg:grid-cols-[2fr_3fr]">
+        <div className="reveal space-y-4">
+          <p className="eyebrow-pill">{h.previewEyebrow}</p>
           <h2 className="text-3xl font-bold sm:text-4xl">{h.previewTitle}</h2>
           <p className="text-lg text-muted">{h.previewText}</p>
         </div>
 
-        <figure aria-label={h.sampleBadge} className="rounded-2xl border border-navy-700 bg-navy-900 p-4 shadow-[0_30px_80px_-40px_var(--color-cyan)] sm:p-6">
+        <figure aria-label={h.sampleBadge} className="reveal surface float-soft p-4 shadow-[0_40px_90px_-40px_var(--color-cyan)] sm:p-6">
           <figcaption className="mb-5 inline-flex rounded-full border border-warm/40 bg-warm/10 px-3 py-1 text-xs font-semibold text-warm">{h.sampleBadge}</figcaption>
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-xl bg-navy-950 p-4">
-              <p className="text-sm text-muted">{h.previewSummary}</p>
-              <div className="mt-3 flex gap-6">
-                <p><span className="block text-3xl font-bold text-ink">8</span><span className="text-xs text-muted">{h.previewIssues}</span></p>
-                <p><span className="block text-3xl font-bold text-cyan">5</span><span className="text-xs text-muted">{h.previewPassed}</span></p>
+            <div className="flex items-center gap-5 rounded-xl bg-navy-950 p-4">
+              {/* Decorative score ring: 5 passed of 13 checks (sample data). */}
+              <svg aria-hidden viewBox="0 0 80 80" className="size-20 shrink-0 -rotate-90">
+                <circle cx="40" cy="40" r="34" fill="none" stroke="var(--color-navy-700)" strokeWidth="7" />
+                <circle cx="40" cy="40" r="34" fill="none" stroke="var(--color-cyan)" strokeWidth="7" strokeLinecap="round" strokeDasharray="213.6" strokeDashoffset="131.5" className="ring-arc" style={{ "--ring-len": "213.6" } as React.CSSProperties} />
+              </svg>
+              <div>
+                <p className="text-sm text-muted">{h.previewSummary}</p>
+                <div className="mt-2 flex gap-6">
+                  <p><span className="block text-3xl font-bold text-ink">8</span><span className="text-xs text-muted">{h.previewIssues}</span></p>
+                  <p><span className="block text-3xl font-bold text-cyan">5</span><span className="text-xs text-muted">{h.previewPassed}</span></p>
+                </div>
               </div>
             </div>
             <div className="rounded-xl bg-navy-950 p-4">
@@ -99,7 +108,7 @@ export default async function Home() {
                 {sampleSeverity.map(([sev, n]) => (
                   <div key={sev} className="flex items-center gap-3 text-sm">
                     <span className="w-24"><SeverityBadge severity={sev} label={t.severity[sev]} /></span>
-                    <span className="h-2 flex-1 rounded bg-navy-800"><span className="block h-2 rounded bg-cyan" style={{ width: `${n * 25}%` }} /></span>
+                    <span className="h-2 flex-1 rounded bg-navy-800"><span className="bar-fill block h-2 rounded bg-gradient-to-l from-cyan to-teal" style={{ width: `${n * 25}%` }} /></span>
                     <span className="w-4 tabular-nums">{n}</span>
                   </div>
                 ))}
@@ -123,17 +132,18 @@ export default async function Home() {
             </div>
           </div>
         </figure>
+      </div>
       </section>
 
       {/* ---------- How it works ---------- */}
-      <section id="how" className="border-y border-navy-800 bg-navy-900/40">
+      <section id="how" className="border-y border-white/5 bg-gradient-to-b from-navy-900/60 to-navy-950">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
-          <p className="eyebrow">{h.howEyebrow}</p>
-          <h2 className="mt-2 text-3xl font-bold sm:text-4xl">{h.howTitle}</h2>
+          <p className="eyebrow-pill reveal">{h.howEyebrow}</p>
+          <h2 className="reveal mt-3 text-3xl font-bold sm:text-4xl">{h.howTitle}</h2>
           <ol className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {h.steps.map(([title, text], i) => (
-              <li key={title} className="rounded-2xl border border-navy-700 bg-navy-950 p-6">
-                <span className="flex size-10 items-center justify-center rounded-full bg-cyan text-lg font-bold text-navy-950">{i + 1}</span>
+              <li key={title} className="reveal surface surface-hover" style={{ animationDelay: `${i * 60}ms` }}>
+                <span className="flex size-11 items-center justify-center rounded-full bg-cyan text-lg font-bold text-navy-950 shadow-[0_0_0_6px_rgb(34_211_238/0.12)]">{i + 1}</span>
                 <h3 className="mt-5 text-lg font-semibold">{title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted">{text}</p>
               </li>
@@ -145,11 +155,11 @@ export default async function Home() {
       {/* ---------- About + final CTA ---------- */}
       <section id="about" className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
         <div className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl border border-navy-700 p-8">
+          <div className="reveal surface p-8">
             <h2 className="text-2xl font-bold">{h.aboutTitle}</h2>
             <p className="mt-3 leading-relaxed text-muted">{h.aboutText}</p>
           </div>
-          <div className="relative overflow-hidden rounded-2xl border border-cyan/30 bg-navy-900 p-8">
+          <div className="reveal surface relative overflow-hidden border-cyan/30 p-8">
             <div aria-hidden className="absolute -top-24 end-0 size-64 rounded-full bg-cyan/10 blur-3xl" />
             <h2 className="relative text-2xl font-bold">{h.finalTitle}</h2>
             <p className="relative mt-3 text-muted">{h.finalText}</p>
