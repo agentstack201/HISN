@@ -87,11 +87,11 @@ test("service worker registers and offline page is shown without network", async
 });
 
 test("click sound plays on buttons and can be switched off (remembered)", async ({ page }) => {
-  // Count generated tones by wrapping AudioContext.createOscillator.
+  // Count played sounds by wrapping AudioContext.createBufferSource.
   await page.addInitScript(() => {
     (window as unknown as { tones: number }).tones = 0;
-    const original = AudioContext.prototype.createOscillator;
-    AudioContext.prototype.createOscillator = function () {
+    const original = AudioContext.prototype.createBufferSource;
+    AudioContext.prototype.createBufferSource = function () {
       (window as unknown as { tones: number }).tones++;
       return original.call(this);
     };
@@ -101,11 +101,12 @@ test("click sound plays on buttons and can be switched off (remembered)", async 
   const toggle = page.getByRole("button", { name: "إيقاف صوت النقر" });
   await expect(toggle).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "إيقاف الفيديو الخلفي" }).click();
-  expect(await tones()).toBeGreaterThan(0);
+  await expect.poll(tones).toBeGreaterThan(0); // file is fetched + decoded on first click
 
   await toggle.click(); // turn off
   const before = await tones();
   await page.getByRole("button", { name: "تشغيل الفيديو الخلفي" }).click();
+  await page.waitForTimeout(300);
   expect(await tones()).toBe(before);
   await page.reload();
   await expect(page.getByRole("button", { name: "تشغيل صوت النقر" })).toHaveAttribute("aria-pressed", "false");

@@ -13,7 +13,7 @@ _Updated: 2026-10-20 (homepage milestone)_
 - Tests: lint PASS, typecheck PASS, Vitest 54/54 PASS, build PASS, Playwright 19 passed / 5 skipped. The browser tests cover the video playing silently and looping, reduced motion, every homepage link resolving, RTL default, the language switch, and no horizontal scroll at 1280 px and 375 px.
 - Visual inspection: done with Chromium screenshots at 1440, 1280, 768 and 390 px.
 - Known gap: the Help page body is still English (shown left-to-right).
-- Click sound (`components/ClickSound.tsx`): a short digital chirp made with the Web Audio API (no audio file) plays when a button or link is clicked. A speaker button in the header turns it on or off, and the choice is saved on the device. Tested in e2e.
+- Click sound (`components/ClickSound.tsx`): the supplied UI click sound (`public/sounds/click.mp3`, 0.36 s, 12 KB) plays through the Web Audio API when a button or link is clicked. A speaker button in the header turns it on or off, and the choice is saved on the device. Tested in e2e.
 - Brand note: the logo includes a palm-and-swords emblem resembling the Saudi national emblem. Confirm it may be used before any public launch.
 
 
