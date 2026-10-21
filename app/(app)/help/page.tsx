@@ -1,4 +1,6 @@
 import { getDict } from "@/lib/i18n";
+import { PageHeader } from "@/components/ui";
+import Reveal from "@/components/Reveal";
 
 export const metadata = { title: "Help" };
 
@@ -24,16 +26,16 @@ export default async function HelpPage() {
   const { lang, t } = await getDict();
   return (
     <div className="max-w-3xl space-y-6">
-      <h1 className="text-3xl font-semibold">{t.nav.help}</h1>
-      {content[lang].map(([heading, items]) => (
-        <section key={heading} className="card space-y-2">
+      <PageHeader title={t.nav.help} />
+      {content[lang].map(([heading, items], i) => (
+        <Reveal as="section" key={heading} delay={Math.min(i, 5) * 60} className="card card-hover space-y-2">
           <h2 className="text-lg font-semibold">{heading}</h2>
           {/^(مستويات|Severity)/.test(heading) ? (
             <ul className="list-disc space-y-1 ps-5 text-muted">{items.map((i) => <li key={i}>{i}</li>)}</ul>
           ) : (
             items.map((i) => <p key={i} className="text-muted">{i}</p>)
           )}
-        </section>
+        </Reveal>
       ))}
     </div>
   );

@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { getDict } from "@/lib/i18n";
 import HeroVideo from "@/components/HeroVideo";
+import Reveal from "@/components/Reveal";
 import { SeverityBadge } from "@/components/ui";
 
 // Simple line icons (24×24, stroke = currentColor) for the capability strip.
@@ -46,13 +47,14 @@ export default async function Home() {
 
         <div className="relative z-10 mx-auto flex max-w-7xl px-4 pb-14 sm:px-6 lg:min-h-[100svh] lg:items-center lg:pb-40 lg:pt-28">
           <div className="-mt-10 max-w-xl space-y-6 lg:mt-0">
-            <p className="eyebrow">{h.eyebrow}</p>
-            <h1 className="text-4xl font-bold leading-[1.25] sm:text-5xl xl:text-6xl">
+            {/* Above the fold: a short staggered entrance instead of scroll reveal. */}
+            <p className="eyebrow animate-[rise_var(--duration-slow)_var(--ease-out-soft)_both]">{h.eyebrow}</p>
+            <h1 className="animate-[rise_var(--duration-slow)_var(--ease-out-soft)_both] text-4xl font-bold leading-[1.25] [animation-delay:90ms] sm:text-5xl xl:text-6xl">
               <span className="block text-ink">{h.title1}</span>
               <span className="block text-cyan">{h.title2}</span>
             </h1>
-            <p className="text-lg leading-relaxed text-ink/80">{h.intro}</p>
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <p className="animate-[rise_var(--duration-slow)_var(--ease-out-soft)_both] text-lg leading-relaxed text-ink/80 [animation-delay:180ms]">{h.intro}</p>
+            <div className="flex animate-[rise_var(--duration-slow)_var(--ease-out-soft)_both] flex-col gap-3 [animation-delay:270ms] sm:flex-row">
               <Link href="/targets" className="btn-hero">{h.ctaPrimary} <span aria-hidden>{arrow}</span></Link>
               <Link href="#how" className="btn-hero-ghost">{h.ctaSecondary}</Link>
             </div>
@@ -63,8 +65,8 @@ export default async function Home() {
         <div id="features" className="relative z-10 mx-auto max-w-7xl px-4 pb-10 sm:px-6 lg:absolute lg:inset-x-0 lg:bottom-8 lg:pb-0">
           <ul className="grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-2 lg:grid-cols-4">
             {h.capabilities.map(([title, text], i) => (
-              <li key={title} className="flex gap-4 bg-navy-950/85 p-5">
-                <svg aria-hidden className="mt-0.5 size-7 shrink-0 text-cyan" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">{icons[i]}</svg>
+              <li key={title} className="group flex gap-4 bg-navy-950/85 p-5 transition-colors hover:bg-navy-900/90">
+                <svg aria-hidden className="mt-0.5 size-7 shrink-0 text-cyan transition-transform duration-200 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">{icons[i]}</svg>
                 <div>
                   <h2 className="font-semibold text-ink">{title}</h2>
                   <p className="mt-1 text-sm leading-relaxed text-muted">{text}</p>
@@ -76,14 +78,14 @@ export default async function Home() {
       </section>
 
       {/* ---------- Dashboard preview ---------- */}
-      <section className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[2fr_3fr]">
+      <Reveal as="section" className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[2fr_3fr]">
         <div className="space-y-4">
           <p className="eyebrow">{h.previewEyebrow}</p>
           <h2 className="text-3xl font-bold sm:text-4xl">{h.previewTitle}</h2>
           <p className="text-lg text-muted">{h.previewText}</p>
         </div>
 
-        <figure aria-label={h.sampleBadge} className="rounded-2xl border border-navy-700 bg-navy-900 p-4 shadow-[0_30px_80px_-40px_var(--color-cyan)] sm:p-6">
+        <figure aria-label={h.sampleBadge} className="rounded-2xl border border-navy-700 bg-navy-900 p-4 shadow-glow sm:p-6">
           <figcaption className="mb-5 inline-flex rounded-full border border-warm/40 bg-warm/10 px-3 py-1 text-xs font-semibold text-warm">{h.sampleBadge}</figcaption>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-xl bg-navy-950 p-4">
@@ -123,27 +125,29 @@ export default async function Home() {
             </div>
           </div>
         </figure>
-      </section>
+      </Reveal>
 
       {/* ---------- How it works ---------- */}
       <section id="how" className="border-y border-navy-800 bg-navy-900/40">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
-          <p className="eyebrow">{h.howEyebrow}</p>
-          <h2 className="mt-2 text-3xl font-bold sm:text-4xl">{h.howTitle}</h2>
+          <Reveal>
+            <p className="eyebrow">{h.howEyebrow}</p>
+            <h2 className="mt-2 text-3xl font-bold sm:text-4xl">{h.howTitle}</h2>
+          </Reveal>
           <ol className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {h.steps.map(([title, text], i) => (
-              <li key={title} className="rounded-2xl border border-navy-700 bg-navy-950 p-6">
-                <span className="flex size-10 items-center justify-center rounded-full bg-cyan text-lg font-bold text-navy-950">{i + 1}</span>
+              <Reveal as="li" key={title} delay={i * 90} className="card card-hover group rounded-2xl bg-navy-950 p-6">
+                <span className="flex size-10 items-center justify-center rounded-full bg-cyan text-lg font-bold text-navy-950 transition-transform duration-200 group-hover:scale-110">{i + 1}</span>
                 <h3 className="mt-5 text-lg font-semibold">{title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted">{text}</p>
-              </li>
+              </Reveal>
             ))}
           </ol>
         </div>
       </section>
 
       {/* ---------- About + final CTA ---------- */}
-      <section id="about" className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
+      <Reveal as="section" id="about" className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-2xl border border-navy-700 p-8">
             <h2 className="text-2xl font-bold">{h.aboutTitle}</h2>
@@ -159,7 +163,7 @@ export default async function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </Reveal>
     </>
   );
 }

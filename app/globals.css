@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* HISN design tokens: deep navy background, restrained teal accent. */
+/* HISN design tokens: deep navy background, restrained teal/cyan accents. */
 @theme {
   --color-navy-950: #070d1a;
   --color-navy-900: #0b1426;
@@ -14,35 +14,208 @@
   --color-stone: #bdb6aa; /* architectural stone */
   --color-warm: #e9a85c; /* small warm light accents */
   --font-sans: var(--font-plex), "Segoe UI", Tahoma, sans-serif;
+
+  /* Elevation: three dark surfaces, each a step closer to the viewer. */
+  --shadow-e1: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-e2: 0 8px 24px -12px rgb(0 0 0 / 0.7);
+  --shadow-e3: 0 24px 60px -30px rgb(0 0 0 / 0.9);
+  --shadow-glow: 0 0 0 1px color-mix(in oklab, var(--color-cyan) 35%, transparent), 0 14px 40px -20px color-mix(in oklab, var(--color-cyan) 60%, transparent);
+
+  /* One easing and two durations, so motion feels like one system. */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 160ms;
+  --duration-slow: 420ms;
+
+  /* Motion used by utility classes below. */
+  --animate-rise: rise var(--duration-slow) var(--ease-out-soft) both;
+  --animate-fade: fade var(--duration-slow) var(--ease-out-soft) both;
+  --animate-pop: pop var(--duration-fast) var(--ease-out-soft) both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-pulse-ring: pulse-ring 2s var(--ease-out-soft) infinite;
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes pop {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+  @keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-cyan) 45%, transparent); }
+    70% { box-shadow: 0 0 0 10px transparent; }
+    100% { box-shadow: 0 0 0 0 transparent; }
+  }
+  /* Bars and rings animate their own length, so no JavaScript is needed. */
+  @keyframes grow-x {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+  @keyframes draw-ring {
+    from { stroke-dashoffset: var(--ring-circumference); }
+    to { stroke-dashoffset: var(--ring-offset); }
+  }
 }
 
 body {
   background: var(--color-navy-950);
   color: var(--color-ink);
+  /* A faint cyan aura so flat dark areas are not dead flat. */
+  background-image: radial-gradient(60rem 30rem at 85% -10%, color-mix(in oklab, var(--color-cyan) 7%, transparent), transparent 60%);
+  background-attachment: fixed;
 }
 
 /* Shared building blocks kept as plain CSS classes so pages stay readable. */
 @layer components {
-  .card { @apply rounded-lg border border-navy-700 bg-navy-900 p-5; }
-  .btn { @apply inline-flex items-center justify-center gap-2 rounded-md bg-teal px-4 py-2 text-sm font-semibold text-navy-950 hover:bg-teal-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-strong disabled:opacity-60; }
-  /* Large homepage buttons. */
-  .btn-hero { @apply inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-cyan px-7 py-3 text-base font-bold text-navy-950 shadow-[0_0_28px_-6px_var(--color-cyan)] transition hover:bg-[#67e8f9] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan; }
-  .btn-hero-ghost { @apply inline-flex min-h-12 items-center justify-center gap-3 rounded-full border border-white/20 bg-navy-950/50 px-7 py-3 text-base font-semibold text-ink transition hover:border-cyan focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan; }
-  .eyebrow { @apply text-sm font-semibold text-cyan; }
-  .btn-ghost { @apply inline-flex items-center justify-center rounded-md border border-navy-700 px-4 py-2 text-sm text-ink hover:border-teal; }
-  .btn-danger { @apply inline-flex items-center justify-center rounded-md border border-red-400/50 px-4 py-2 text-sm text-red-300 hover:bg-red-400/10; }
-  .input { @apply w-full rounded-md border border-navy-700 bg-navy-950 px-3 py-2 text-ink placeholder:text-muted/60 focus:border-teal focus:outline-none; }
-  .label { @apply mb-1 block text-sm text-muted; }
-  .link { @apply text-teal-strong underline-offset-4 hover:underline; }
-  .table { @apply w-full text-left text-sm; }
-  .table th { @apply border-b border-navy-700 px-3 py-2 font-medium text-muted; }
-  .table td { @apply border-b border-navy-800 px-3 py-2 align-top; }
+  /* --- Surfaces --- */
+  .card {
+    @apply rounded-xl border border-navy-700 bg-navy-900/80 p-5 shadow-e1;
+    transition: border-color var(--duration-fast) var(--ease-out-soft), box-shadow var(--duration-fast) var(--ease-out-soft), transform var(--duration-fast) var(--ease-out-soft);
+  }
+  /* Opt-in hover lift for cards that are links or key content. */
+  .card-hover:hover { @apply -translate-y-0.5 border-cyan/40 shadow-e2; }
+  .panel { @apply rounded-2xl border border-navy-700 bg-navy-900/60 shadow-e2; }
+
+  /* --- Buttons: shared press/hover feel --- */
+  .btn,
+  .btn-ghost,
+  .btn-danger,
+  .btn-hero,
+  .btn-hero-ghost {
+    transition: background-color var(--duration-fast) var(--ease-out-soft), border-color var(--duration-fast) var(--ease-out-soft),
+      color var(--duration-fast) var(--ease-out-soft), box-shadow var(--duration-fast) var(--ease-out-soft), transform var(--duration-fast) var(--ease-out-soft);
+  }
+  .btn:active:not(:disabled),
+  .btn-ghost:active:not(:disabled),
+  .btn-danger:active:not(:disabled),
+  .btn-hero:active:not(:disabled),
+  .btn-hero-ghost:active:not(:disabled) {
+    transform: translateY(1px) scale(0.985);
+  }
+
+  .btn { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-navy-950 shadow-e1 hover:bg-teal-strong hover:shadow-e2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-strong disabled:cursor-not-allowed disabled:opacity-60; }
+  .btn-ghost { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-navy-700 px-4 py-2 text-sm text-ink hover:border-teal hover:bg-navy-800/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-strong disabled:cursor-not-allowed disabled:opacity-60; }
+  .btn-danger { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-red-400/50 px-4 py-2 text-sm text-red-300 hover:bg-red-400/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300 disabled:cursor-not-allowed disabled:opacity-60; }
+
+  /* Large homepage buttons. The sheen is a slow highlight that crosses on hover. */
+  .btn-hero {
+    @apply relative isolate inline-flex min-h-13 items-center justify-center gap-3 overflow-hidden rounded-full bg-cyan px-7 py-3 text-base font-bold text-navy-950 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan;
+    box-shadow: 0 0 30px -8px var(--color-cyan), var(--shadow-e2);
+  }
+  .btn-hero:hover { @apply bg-[#67e8f9]; box-shadow: 0 0 44px -6px var(--color-cyan), var(--shadow-e2); }
+  .btn-hero::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: -60%;
+    width: 40%;
+    z-index: -1;
+    background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.55), transparent);
+    transform: translateX(0);
+    transition: transform 700ms var(--ease-out-soft);
+  }
+  .btn-hero:hover::after { transform: translateX(420%); }
+  :where([dir="rtl"]) .btn-hero:hover::after { transform: translateX(-420%); }
+
+  .btn-hero-ghost { @apply inline-flex min-h-13 items-center justify-center gap-3 rounded-full border border-white/20 bg-navy-950/50 px-7 py-3 text-base font-semibold text-ink backdrop-blur-sm hover:border-cyan hover:bg-navy-900/70 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan; }
+
+  .eyebrow { @apply text-sm font-semibold tracking-wide text-cyan; }
+
+  /* --- Forms --- */
+  .input {
+    @apply w-full rounded-lg border border-navy-700 bg-navy-950/80 px-3 py-2.5 text-ink placeholder:text-muted/50 focus:border-cyan focus:outline-none;
+    transition: border-color var(--duration-fast) var(--ease-out-soft), box-shadow var(--duration-fast) var(--ease-out-soft);
+  }
+  .input:focus { box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-cyan) 22%, transparent); }
+  .input:user-invalid { @apply border-red-400/70; }
+  .label { @apply mb-1.5 block text-sm font-medium text-muted; }
+
+  /* --- Links and tables --- */
+  .link { @apply rounded text-teal-strong underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-strong; }
+  /* Nav links grow an underline from the inline start, correct in both directions. */
+  .nav-link {
+    @apply relative rounded py-1 text-muted transition-colors hover:text-cyan focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan;
+  }
+  .nav-link::after {
+    content: "";
+    position: absolute;
+    inset-inline-start: 0;
+    bottom: 0;
+    height: 2px;
+    width: 100%;
+    background: var(--color-cyan);
+    transform: scaleX(0);
+    transform-origin: var(--tw-origin, left);
+    transition: transform var(--duration-fast) var(--ease-out-soft);
+  }
+  :where([dir="rtl"]) .nav-link::after { transform-origin: right; }
+  .nav-link:hover::after,
+  .nav-link[aria-current="page"]::after { transform: scaleX(1); }
+
+  .table { @apply w-full text-start text-sm; }
+  .table th { @apply border-b border-navy-700 px-3 py-2.5 text-start font-medium text-muted; }
+  .table td { @apply border-b border-navy-800 px-3 py-2.5 text-start align-middle; }
+  .table tbody tr { transition: background-color var(--duration-fast) var(--ease-out-soft); }
+  .table tbody tr:hover { @apply bg-navy-800/40; }
+
+  /* --- Page headers on inner pages --- */
+  .page-title { @apply text-2xl font-bold sm:text-3xl; }
+  .page-sub { @apply mt-1 text-sm text-muted; }
+
+  /* Skeleton block used by loading.tsx files. */
+  .skeleton {
+    @apply rounded-lg bg-navy-800;
+    background-image: linear-gradient(90deg, transparent, color-mix(in oklab, var(--color-navy-700) 90%, white 10%), transparent);
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+  }
 }
 
-[dir="rtl"] .table { text-align: right; }
+/* Bars grow from the inline start in both directions. */
+[dir="ltr"] [style*="grow-x"] { transform-origin: left; }
+[dir="rtl"] [style*="grow-x"] { transform-origin: right; }
+
+/*
+ * Scroll reveal. Content is hidden ONLY when the "js" class is on <html>,
+ * which a tiny inline script in app/layout.tsx adds before the first paint.
+ * Without JavaScript nothing is ever hidden, so the page is always readable.
+ */
+@utility reveal {
+  transition: opacity var(--duration-slow) var(--ease-out-soft), transform var(--duration-slow) var(--ease-out-soft);
+}
+@utility reveal-in {
+  opacity: 1;
+  transform: none;
+}
+
+:root.js .reveal:not(.reveal-in) {
+  opacity: 0;
+  transform: translateY(18px);
+}
 
 /* Smooth in-page scrolling for the homepage anchors, unless reduced motion is preferred. */
 @media (prefers-reduced-motion: no-preference) {
   html { scroll-behavior: smooth; }
 }
 section[id] { scroll-margin-top: 6rem; }
+
+/* One switch disables every animation for people who ask for reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  :root.js .reveal:not(.reveal-in) { opacity: 1; transform: none; }
+}

@@ -117,3 +117,42 @@ test("help page is fully Arabic by default and English after switching", async (
   await expect(page.getByRole("heading", { name: "ماذا يفعل الفحص؟" })).toBeVisible();
   await expect(page.getByText("What does a scan do?")).toHaveCount(0);
 });
+
+test("content is visible without JavaScript (scroll reveal degrades safely)", async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const page = await context.newPage();
+  await page.goto("http://localhost:3100/");
+  await expect(page.getByRole("heading", { name: "أضف موقعك" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "كيف يعمل حصن؟" })).toBeVisible();
+  // The stylesheet must load too, otherwise the page renders unstyled.
+  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(7, 13, 26)");
+  await context.close();
+});
+
+test("header gains a solid backdrop after scrolling", async ({ page }) => {
+  await page.goto("/");
+  const header = page.locator("[data-site-header]");
+  await expect(header).toHaveAttribute("data-scrolled", "false");
+  await page.mouse.wheel(0, 400);
+  await expect(header).toHaveAttribute("data-scrolled", "true");
+});
+
+test("mobile menu closes with Escape and after choosing a link", async ({ page }, info) => {
+  test.skip(info.project.name !== "mobile");
+  const menu = page.locator("details");
+  await page.goto("/");
+  await page.getByText("القائمة").click();
+  await expect(menu).toHaveAttribute("open", "");
+  await page.keyboard.press("Escape");
+  await expect(menu).not.toHaveAttribute("open", "");
+});
+
+test("password field can be revealed and hidden", async ({ page }) => {
+  await page.goto("/login");
+  const field = page.locator("#password");
+  await expect(field).toHaveAttribute("type", "password");
+  await page.getByRole("button", { name: "إظهار كلمة المرور" }).click();
+  await expect(field).toHaveAttribute("type", "text");
+  await page.getByRole("button", { name: "إخفاء كلمة المرور" }).click();
+  await expect(field).toHaveAttribute("type", "password");
+});

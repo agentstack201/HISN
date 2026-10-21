@@ -30,6 +30,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang={lang} dir={lang === "ar" ? "rtl" : "ltr"} className={plex.variable}>
       <body className="flex min-h-screen flex-col antialiased">
+        {/*
+          Marks the page as "JavaScript is running" before the content paints, so
+          the scroll-reveal CSS may hide sections. Without JavaScript the class is
+          never added and every section stays visible.
+        */}
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
         <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:start-2 focus:z-50 focus:rounded focus:bg-navy-900 focus:p-2">Skip to content</a>
         <SiteHeader lang={lang} loggedIn={loggedIn} t={t.nav} appName={t.appName} />
         <main id="main" className="flex-1">{children}</main>
