@@ -10,7 +10,7 @@
 | D6 | Scans run synchronously inside the server action (≤30 s) | No job queue/Redis needed; acceptable for a few requests per scan. |
 | D7 | All DB access uses the user's session (anon key + RLS); no service-role key | Removes the most dangerous secret; RLS is the real security boundary. |
 | D8 | Missing headers rated Medium/Low/Info, never Critical | They are hardening gaps, not proven exploits. No current check produces Critical. |
-| D9 | pdf-lib for PDF | Pure JavaScript, small, no headless browser. Its standard fonts are Latin-only, so reports are in English; non-Latin characters are replaced with `?`. |
+| D9 | pdf-lib for PDF (cover, contents, score gauge, charts drawn with basic shapes, framed pages) | Pure JavaScript, small, no headless browser. Its standard fonts are Latin-only, so reports are in English; non-Latin characters are replaced with `?`. |
 | D10 | Findings are stored in English and translated to Arabic when displayed (`lib/finding-text.ts`); evidence stays raw English; PDF reports stay English | Keeps the scanner and database language-neutral; a unit test guarantees every possible finding has an Arabic text. |
 | D11 | Live scanning off by default (`LIVE_SCANNING_ENABLED`) | Required by the project brief until protections are verified in the deployment environment. |
 | D12 | Light i18n via a dictionary + cookie, not a routing library | A few dozen strings; a library would add configuration with little benefit. |

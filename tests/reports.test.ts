@@ -24,7 +24,21 @@ const finding = {
   created_at: "2026-10-20T10:00:05Z",
 };
 
+describe("securityScore", () => {
+  it("starts at 100 and subtracts by severity of failed checks only", async () => {
+    const { securityScore } = await import("@/lib/reports");
+    expect(securityScore([]).score).toBe(100);
+    expect(securityScore([{ ...finding }, { ...finding, status: "passed" as const }])).toMatchObject({ score: 92, grade: "A" });
+    expect(securityScore(Array(20).fill({ ...finding, severity: "high" })).score).toBe(0);
+  });
+});
+
 describe("buildReport", () => {
+  it("builds cover, contents, summary, charts, findings and methodology with a trend", async () => {
+    const history = [3, 2, 1].map((issues, i) => ({ started_at: `2026-10-1${i}T00:00:00Z`, issues }));
+    const pdf = await PDFDocument.load(await buildReport({ ...base, findings: [finding], history }));
+    expect(pdf.getPageCount()).toBe(6);
+  });
   it("creates a valid PDF for a completed scan with findings", async () => {
     const bytes = await buildReport({ ...base, findings: Array(40).fill(finding) });
     const pdf = await PDFDocument.load(bytes);
@@ -32,7 +46,7 @@ describe("buildReport", () => {
   });
   it("handles failed scans and empty results without crashing", async () => {
     const bytes = await buildReport({ ...base, status: "failed", error_message: "Request timed out" });
-    expect((await PDFDocument.load(bytes)).getPageCount()).toBe(1);
+    expect((await PDFDocument.load(bytes)).getPageCount()).toBe(4); // cover, contents, summary (failure box), methodology
     await expect(buildReport(base)).resolves.toBeInstanceOf(Uint8Array);
   });
   it("survives non-Latin text such as Arabic target names", async () => {

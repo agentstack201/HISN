@@ -27,6 +27,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Ship the logo with the PDF report function (it reads the file from disk).
+  outputFileTracingIncludes: { "/scans/[id]/report": ["./public/images/hisn-logo.jpg"] },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

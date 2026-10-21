@@ -2,6 +2,8 @@
 import { createClient, supabaseConfigured } from "@/lib/supabase/server";
 import { buildReport, loadScan } from "@/lib/reports";
 import { uuidSchema } from "@/lib/validation";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -12,7 +14,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   const scan = await loadScan(supabase, id);
   if (!scan) return new Response("Not found", { status: 404 });
-  const pdf = await buildReport(scan);
+  // The logo is optional: if the file is missing the report is still built.
+  const logo = await readFile(path.join(process.cwd(), "public/images/hisn-logo.jpg")).catch(() => undefined);
+  const pdf = await buildReport(scan, logo);
   return new Response(Buffer.from(pdf), {
     headers: {
       "Content-Type": "application/pdf",
