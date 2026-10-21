@@ -2,7 +2,14 @@
 
 _Updated: 2026-10-21 (Supabase connected and verified)_
 
-## Latest milestone: Supabase connected, full workflow verified
+## Latest milestone: deployed on Vercel — https://hisn-delta.vercel.app
+
+- Supabase settings added on Vercel; live login, target management and dashboard verified on the deployed site.
+- Live scanning enabled on production only after verification in that environment: a real scan of example.com showed the real certificate issuer (no intercepting proxy), and `localtest.me` (a public name resolving to 127.0.0.1) was blocked with "resolves to a non-public address". Literal metadata IPs are rejected by the form.
+- Scan summary and failed-scan notice translated to Arabic.
+- Test data removed afterwards. The owner should revoke the Vercel and Supabase tokens shared in chat.
+
+## Earlier milestone: Supabase connected, full workflow verified
 
 - Migration applied to the real Supabase project; RLS on all tables. Profile language default changed to Arabic to match the site.
 - `npm run e2e:auth` (10 tests) passes against the real project: login, target management, real scan stored, results, filter, comparison, PDF, cross-user isolation, rate limit, delete, settings.
@@ -10,7 +17,7 @@ _Updated: 2026-10-21 (Supabase connected and verified)_
 - Email confirmation was left ON (never changed). Form self-registration with email confirmation is therefore untested.
 - Arabic: Help page fully translated; scanner findings are translated at display time (`lib/finding-text.ts`, unit-tested to cover every possible finding); verified on the real database. PDF reports stay English (pdf-lib cannot shape Arabic).
 - Final technical report written in Arabic: `docs/final-report.md`.
-- Still open: deployment (needs hosting approval), Arabic PDF, brand/emblem and sound licence to confirm.
+- Still open: Arabic PDF, brand/emblem and sound licence to confirm.
 - Security note: the Supabase access token shared in chat must be revoked by the owner at https://supabase.com/dashboard/account/tokens.
 
 
@@ -29,7 +36,7 @@ _Updated: 2026-10-21 (Supabase connected and verified)_
 - Brand note: the logo includes a palm-and-swords emblem resembling the Saudi national emblem. Confirm it may be used before any public launch.
 
 
-**Estimated overall completion:** about 92% (an estimate, not a measurement). The remaining work is mainly verifying the full workflow against a real Supabase project and deploying.
+**Estimated overall completion:** about 96% (an estimate, not a measurement). The remaining work is mainly verifying the full workflow against a real Supabase project and deploying.
 
 **Current phase:** Phase 9 (quality assurance). Phases 1–8 are implemented and verified against Supabase. Phase 10 handover docs are drafted.
 

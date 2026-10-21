@@ -31,6 +31,7 @@ Last run: 2026-10-20, in the development container (Node 22, PostgreSQL 16, Chro
 | Deleting a target removes its scans; settings saved | `npm run e2e:auth` | PASS |
 | Live database: RLS enabled on all 4 tables, 9 policies, anonymous reads return nothing | SQL + REST check | PASS |
 | Self-registration through the form with email confirmation | not tested: confirmation emails cannot be read in the test environment; test users were created directly in the database (`tests/supabase/create-test-users.sql`) and removed afterwards | BLOCKED |
+| Deployed site (Vercel): login, target add, metadata IP rejected, real scan with real TLS issuer, DNS-to-127.0.0.1 domain blocked | Playwright script against https://hisn-delta.vercel.app | PASS |
 | PWA install prompt on a real phone | needs deployment over HTTPS | BLOCKED |
 | Accessibility | partial: semantic HTML, labels, skip link, focus styles, role=alert/status; no automated audit yet | PARTIAL |
 

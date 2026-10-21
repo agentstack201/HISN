@@ -39,7 +39,7 @@ export default async function ScanPage({ params, searchParams }: { params: Promi
 
       {scan.status === "failed" && (
         <div role="alert" className="card border-red-400/40">
-          <p className="font-semibold text-red-300">The scan failed — this is not a security finding.</p>
+          <p className="font-semibold text-red-300">{t.scans.failedNote}</p>
           <p className="text-muted" dir="ltr">{scan.error_message}</p>
         </div>
       )}
@@ -47,7 +47,7 @@ export default async function ScanPage({ params, searchParams }: { params: Promi
       {scan.status === "completed" && (
         <>
           <p className="text-muted">
-            {issues} issue(s) found in {scan.findings.length} results. These checks are limited; no issues does not mean the site is completely secure.
+            {t.scans.summary.replace("{issues}", String(issues)).replace("{total}", String(scan.findings.length))}
           </p>
           <nav aria-label={t.scans.filter} className="flex flex-wrap gap-2 text-sm">
             <Link className={filter ? "btn-ghost" : "btn"} href={`/scans/${scan.id}`}>{t.scans.all}</Link>
