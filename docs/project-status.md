@@ -8,7 +8,9 @@ _Updated: 2026-10-21 (Supabase connected and verified)_
 - `npm run e2e:auth` (10 tests) passes against the real project: login, target management, real scan stored, results, filter, comparison, PDF, cross-user isolation, rate limit, delete, settings.
 - Test users were created directly in the database and deleted afterwards; the project is clean (0 users, targets, scans, findings).
 - Email confirmation was left ON (never changed). Form self-registration with email confirmation is therefore untested.
-- Still open: deployment (needs hosting approval), PDF report is English-only, Help page and finding texts are English, brand/emblem and sound licence to confirm.
+- Arabic: Help page fully translated; scanner findings are translated at display time (`lib/finding-text.ts`, unit-tested to cover every possible finding); verified on the real database. PDF reports stay English (pdf-lib cannot shape Arabic).
+- Final technical report written in Arabic: `docs/final-report.md`.
+- Still open: deployment (needs hosting approval), Arabic PDF, brand/emblem and sound licence to confirm.
 - Security note: the Supabase access token shared in chat must be revoked by the owner at https://supabase.com/dashboard/account/tokens.
 
 
@@ -27,7 +29,7 @@ _Updated: 2026-10-21 (Supabase connected and verified)_
 - Brand note: the logo includes a palm-and-swords emblem resembling the Saudi national emblem. Confirm it may be used before any public launch.
 
 
-**Estimated overall completion:** about 88% (an estimate, not a measurement). The remaining work is mainly verifying the full workflow against a real Supabase project and deploying.
+**Estimated overall completion:** about 92% (an estimate, not a measurement). The remaining work is mainly verifying the full workflow against a real Supabase project and deploying.
 
 **Current phase:** Phase 9 (quality assurance). Phases 1–8 are implemented and verified against Supabase. Phase 10 handover docs are drafted.
 

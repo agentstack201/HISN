@@ -7,7 +7,7 @@ Status: ✅ done & verified · 🟡 done, not verified end-to-end (needs Supabas
 | ID | Requirement | Status |
 |----|-------------|--------|
 | F1 | Landing, overview, help/contact, responsive nav & footer | ✅ |
-| F2 | English LTR / Arabic RTL interface | ✅ (findings text English, see D10) |
+| F2 | English LTR / Arabic RTL interface | ✅ (findings translated at display time; PDF English, see D10) |
 | F3 | Register, login, logout, session refresh | 🟡 |
 | F4 | Account settings (display name, language) | 🟡 |
 | F5 | Add / list / edit / delete targets with URL validation & ownership | 🟡 (validation ✅) |

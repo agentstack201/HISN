@@ -34,7 +34,7 @@ Last run: 2026-10-20, in the development container (Node 22, PostgreSQL 16, Chro
 | PWA install prompt on a real phone | needs deployment over HTTPS | BLOCKED |
 | Accessibility | partial: semantic HTML, labels, skip link, focus styles, role=alert/status; no automated audit yet | PARTIAL |
 
-Totals: Vitest 54/54; Playwright public 21 passed; Playwright authenticated 10/10; local RLS 10/10.
+Totals: Vitest 56/56; Playwright public 23 passed; Playwright authenticated 10/10; local RLS 10/10.
 
 ## Manual test checklist once Supabase is connected
 

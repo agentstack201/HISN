@@ -66,7 +66,7 @@ test.describe.serial("authenticated workflow", () => {
     await page.getByRole("button", { name: "بدء الفحص" }).click();
     await expect(page).toHaveURL(/\/scans\/[0-9a-f-]{36}$/, { timeout: 60_000 });
     scanPath = new URL(page.url()).pathname;
-    await expect(page.getByText("Missing Content-Security-Policy header")).toBeVisible();
+    await expect(page.getByText("ترويسة Content-Security-Policy (CSP) غير موجودة")).toBeVisible(); // Arabic finding text
     await expect(page.getByText("الدليل:").first()).toBeVisible();
     await page.getByRole("link", { name: /^منخفضة/ }).click();
     await expect(page).toHaveURL(/severity=low/);

@@ -2,13 +2,14 @@ import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
 import { getDict } from "@/lib/i18n";
 import { uuidSchema } from "@/lib/validation";
+import { localizeFinding } from "@/lib/finding-text";
 import { StatusText } from "@/components/ui";
 
 export const metadata = { title: "Scan history" };
 
 export default async function ScansPage({ searchParams }: { searchParams: Promise<{ a?: string; b?: string }> }) {
   const { supabase } = await requireUser();
-  const { t } = await getDict();
+  const { lang, t } = await getDict();
   const { a, b } = await searchParams;
   const { data: scans } = await supabase.from("scans").select("id, status, started_at, target_id, targets(name)").order("started_at", { ascending: false }).limit(100);
 
@@ -22,7 +23,7 @@ export default async function ScansPage({ searchParams }: { searchParams: Promis
       const entry: Row = byKey.get(r.check_key) ?? { key: r.check_key, title: r.title };
       if (r.scan_id === a) entry.a = r.status;
       else entry.b = r.status;
-      entry.title = r.title;
+      entry.title = localizeFinding(r, lang).title;
       byKey.set(r.check_key, entry);
     }
     comparison = [...byKey.values()].sort((x, y) => x.key.localeCompare(y.key));

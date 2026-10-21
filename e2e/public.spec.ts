@@ -111,3 +111,9 @@ test("click sound plays on buttons and can be switched off (remembered)", async 
   await page.reload();
   await expect(page.getByRole("button", { name: "تشغيل صوت النقر" })).toHaveAttribute("aria-pressed", "false");
 });
+
+test("help page is fully Arabic by default and English after switching", async ({ page }) => {
+  await page.goto("/help");
+  await expect(page.getByRole("heading", { name: "ماذا يفعل الفحص؟" })).toBeVisible();
+  await expect(page.getByText("What does a scan do?")).toHaveCount(0);
+});

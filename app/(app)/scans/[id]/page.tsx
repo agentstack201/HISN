@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/supabase/server";
 import { getDict } from "@/lib/i18n";
 import { loadScan } from "@/lib/reports";
+import { localizeFinding } from "@/lib/finding-text";
 import { SEVERITY_ORDER, type Severity } from "@/lib/security-checks";
 import { uuidSchema } from "@/lib/validation";
 import { SeverityBadge, StatusText } from "@/components/ui";
@@ -14,7 +15,7 @@ export default async function ScanPage({ params, searchParams }: { params: Promi
   const { severity } = await searchParams;
   if (!uuidSchema.safeParse(id).success) notFound();
   const { supabase } = await requireUser();
-  const { t } = await getDict();
+  const { lang, t } = await getDict();
   const scan = await loadScan(supabase, id);
   if (!scan) notFound();
 
@@ -57,8 +58,10 @@ export default async function ScanPage({ params, searchParams }: { params: Promi
             ))}
           </nav>
           <div className="space-y-3">
-            {shown.map((f) => (
-              <article key={f.check_key + f.title} className="card space-y-2">
+            {shown.map((finding) => {
+              const f = { ...finding, ...localizeFinding(finding, lang) };
+              return (
+              <article key={f.check_key + finding.title} className="card space-y-2">
                 <div className="flex flex-wrap items-center gap-3">
                   <SeverityBadge severity={f.severity} label={t.severity[f.severity]} />
                   <StatusText status={f.status} label={t.status[f.status]} />
@@ -69,7 +72,8 @@ export default async function ScanPage({ params, searchParams }: { params: Promi
                 <p className="text-sm"><b>{t.scans.remediation}:</b> {f.remediation}</p>
                 <p className="text-xs text-muted">{t.scans.confidence}: {f.confidence} · {f.check_key}</p>
               </article>
-            ))}
+              );
+            })}
             {shown.length === 0 && <p className="text-muted">—</p>}
           </div>
         </>
