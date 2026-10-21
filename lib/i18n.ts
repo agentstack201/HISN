@@ -1,0 +1,124 @@
+/**
+ * Simple English/Arabic translations. The chosen language is stored in a
+ * "lang" cookie (Arabic by default); Arabic switches the page to right-to-left (dir="rtl").
+ * Scanner findings are written in English (technical terms), documented in docs/decisions.md.
+ */
+import { cookies } from "next/headers";
+
+const en = {
+  appName: "HISN",
+  tagline: "Web application security assessment for websites you own",
+  nav: { home: "Home", features: "Features", how: "How it works", resources: "Resources", about: "About", start: "Get started", menu: "Menu", dashboard: "Dashboard", targets: "Targets", scans: "Scan history", settings: "Settings", help: "Help", login: "Log in", register: "Register", logout: "Log out", soundOn: "Turn click sounds on", soundOff: "Turn click sounds off" },
+  home: {
+    eyebrow: "From assessment to assurance",
+    title1: "Protection today,",
+    title2: "greater trust tomorrow",
+    intro: "An integrated platform for assessing websites and applications and detecting security weakness indicators, with clear evidence and practical remediation guidance.",
+    ctaPrimary: "Start scanning now",
+    ctaSecondary: "See how HISN works",
+    videoPause: "Pause background video",
+    videoPlay: "Play background video",
+    capabilities: [
+      ["Clear security assessment", "HTTPS, TLS certificates and security headers checked with real requests."],
+      ["Insecure settings detection", "Cookie attributes, version disclosure, clickjacking and risky CORS."],
+      ["Actionable reports", "Downloadable PDF reports built from your saved results."],
+      ["Remediation guidance", "Every issue comes with observed evidence and how to fix it."],
+    ],
+    previewEyebrow: "Product preview",
+    previewTitle: "Your results, organized and clear",
+    previewText: "The dashboard groups findings by severity, keeps your assessment history and shows what to fix first.",
+    sampleBadge: "Demonstration data — not real scan results",
+    previewSummary: "Assessment summary",
+    previewIssues: "issues found",
+    previewPassed: "checks passed",
+    previewSeverity: "Findings by severity",
+    previewRecent: "Recent assessments",
+    previewFix: "Recommended next fix",
+    previewFixTitle: "Add a Content-Security-Policy header",
+    previewFixText: "Start with default-src 'self' and allow only the resources your site needs.",
+    howEyebrow: "Simple steps, clear results",
+    howTitle: "How does HISN work?",
+    steps: [
+      ["Add your website", "Save the URL of a website you own or are authorized to test."],
+      ["Start the scan", "HISN sends a few normal requests from the server — no attacks, no port scanning."],
+      ["Review results and evidence", "See each finding with its severity, the evidence observed and its status."],
+      ["Apply the recommendations", "Follow the remediation steps, then scan again and compare."],
+    ],
+    aboutTitle: "About HISN",
+    aboutText: "HISN is a Computing Diploma graduation project that demonstrates secure web development and practical web security assessment. It is a basic, non-intrusive assessment: finding no issues does not mean a website is completely secure.",
+    finalTitle: "Start with a website you own",
+    finalText: "Create an account, add your website and get your first evidence-based assessment.",
+  },
+  auth: { email: "Email", password: "Password", loginTitle: "Log in to HISN", registerTitle: "Create your account", submitLogin: "Log in", submitRegister: "Create account", haveAccount: "Already have an account?", noAccount: "No account yet?", checkEmail: "Account created. Check your email to confirm it, then log in." },
+  dashboard: { title: "Dashboard", targets: "Saved targets", scans: "Total scans", completed: "Completed scans", failed: "Failed scans", bySeverity: "Open issues by severity (latest scan per target)", recent: "Recent scans", none: "No scans yet. Add a target and start your first assessment." },
+  targets: { title: "Targets", add: "Add target", name: "Name", url: "URL", authorized: "I own this website or have written permission to test it.", save: "Save", delete: "Delete", scan: "Start scan", history: "Scan history", none: "No targets yet.", edit: "Edit target" },
+  scans: { title: "Scan history", status: "Status", started: "Started", completed: "Completed", findings: "Findings", report: "Download PDF report", filter: "Filter by severity", all: "All", compare: "Compare", none: "No scans yet.", evidence: "Evidence", remediation: "Remediation", confidence: "Confidence", networkNote: "New scans need an internet connection and run on the server." },
+  settings: { title: "Account settings", displayName: "Display name", language: "Preferred language", save: "Save settings", saved: "Settings saved." },
+  severity: { critical: "Critical", high: "High", medium: "Medium", low: "Low", info: "Informational" },
+  status: { running: "Running", completed: "Completed", failed: "Failed", passed: "Passed", info: "Info", inconclusive: "Inconclusive" },
+  footer: "HISN — Computing Diploma graduation project. Only test websites you are authorized to assess.",
+};
+
+type Dict = typeof en;
+
+const ar: Dict = {
+  appName: "حِصن",
+  tagline: "تقييم أمن تطبيقات الويب للمواقع التي تملكها",
+  nav: { home: "الرئيسية", features: "المميزات", how: "كيف يعمل", resources: "الموارد", about: "من نحن", start: "ابدأ الآن", menu: "القائمة", dashboard: "لوحة التحكم", targets: "المواقع", scans: "سجل الفحوصات", settings: "الإعدادات", help: "المساعدة", login: "تسجيل الدخول", register: "إنشاء حساب", logout: "تسجيل الخروج", soundOn: "تشغيل صوت النقر", soundOff: "إيقاف صوت النقر" },
+  home: {
+    eyebrow: "من الفحص إلى الأمان",
+    title1: "حماية اليوم،",
+    title2: "لثقة أكبر غدًا",
+    intro: "منصة متكاملة لفحص المواقع والتطبيقات واكتشاف مؤشرات الضعف الأمني، مع أدلة واضحة وإرشادات عملية للإصلاح.",
+    ctaPrimary: "ابدأ الفحص الآن",
+    ctaSecondary: "اكتشف كيف يعمل حصن",
+    videoPause: "إيقاف الفيديو الخلفي",
+    videoPlay: "تشغيل الفيديو الخلفي",
+    capabilities: [
+      ["فحص أمني واضح", "فحص HTTPS وشهادات TLS وترويسات الأمان بطلبات حقيقية."],
+      ["اكتشاف الإعدادات غير الآمنة", "خصائص ملفات الارتباط، وكشف الإصدارات، والتأطير، و CORS الخطِر."],
+      ["تقارير قابلة للتنفيذ", "تقارير PDF قابلة للتنزيل مبنية على نتائجك المحفوظة."],
+      ["إرشادات للإصلاح", "كل مشكلة مرفقة بالدليل الملاحظ وطريقة إصلاحها."],
+    ],
+    previewEyebrow: "معاينة المنصة",
+    previewTitle: "نتائجك منظمة وواضحة",
+    previewText: "تجمع لوحة التحكم النتائج حسب الخطورة، وتحفظ سجل التقييمات، وتوضح ما يجب إصلاحه أولًا.",
+    sampleBadge: "بيانات توضيحية — ليست نتائج فحص حقيقية",
+    previewSummary: "ملخص التقييم",
+    previewIssues: "مشكلات مكتشفة",
+    previewPassed: "فحوصات ناجحة",
+    previewSeverity: "النتائج حسب الخطورة",
+    previewRecent: "أحدث التقييمات",
+    previewFix: "الإصلاح المقترح التالي",
+    previewFixTitle: "أضف ترويسة Content-Security-Policy",
+    previewFixText: "ابدأ بـ default-src 'self' واسمح فقط بالموارد التي يحتاجها موقعك.",
+    howEyebrow: "خطوات بسيطة لنتائج واضحة",
+    howTitle: "كيف يعمل حصن؟",
+    steps: [
+      ["أضف موقعك", "احفظ رابط موقع تملكه أو لديك تصريح باختباره."],
+      ["ابدأ الفحص", "يرسل حصن عددًا قليلًا من الطلبات العادية من الخادم — دون هجمات أو فحص منافذ."],
+      ["راجع النتائج والأدلة", "اطّلع على كل نتيجة مع خطورتها والدليل الملاحظ وحالتها."],
+      ["طبّق التوصيات", "اتبع خطوات الإصلاح، ثم أعد الفحص وقارن النتائج."],
+    ],
+    aboutTitle: "من نحن",
+    aboutText: "حصن مشروع تخرج لدبلوم الحوسبة يوضّح التطوير الآمن للويب والتقييم العملي لأمن المواقع. وهو تقييم أساسي غير تدخلي: عدم وجود نتائج لا يعني أن الموقع آمن تمامًا.",
+    finalTitle: "ابدأ بموقع تملكه",
+    finalText: "أنشئ حسابًا، وأضف موقعك، واحصل على أول تقييم مبني على الأدلة.",
+  },
+  auth: { email: "البريد الإلكتروني", password: "كلمة المرور", loginTitle: "تسجيل الدخول إلى حِصن", registerTitle: "إنشاء حساب", submitLogin: "دخول", submitRegister: "إنشاء الحساب", haveAccount: "لديك حساب؟", noAccount: "ليس لديك حساب؟", checkEmail: "تم إنشاء الحساب. أكّد بريدك الإلكتروني ثم سجّل الدخول." },
+  dashboard: { title: "لوحة التحكم", targets: "المواقع المحفوظة", scans: "إجمالي الفحوصات", completed: "فحوصات مكتملة", failed: "فحوصات فاشلة", bySeverity: "المشكلات حسب الخطورة (آخر فحص لكل موقع)", recent: "أحدث الفحوصات", none: "لا توجد فحوصات بعد. أضف موقعًا وابدأ أول تقييم." },
+  targets: { title: "المواقع", add: "إضافة موقع", name: "الاسم", url: "الرابط", authorized: "أملك هذا الموقع أو لدي إذن مكتوب باختباره.", save: "حفظ", delete: "حذف", scan: "بدء الفحص", history: "سجل الفحوصات", none: "لا توجد مواقع بعد.", edit: "تعديل الموقع" },
+  scans: { title: "سجل الفحوصات", status: "الحالة", started: "البدء", completed: "الانتهاء", findings: "النتائج", report: "تنزيل تقرير PDF", filter: "تصفية حسب الخطورة", all: "الكل", compare: "مقارنة", none: "لا توجد فحوصات بعد.", evidence: "الدليل", remediation: "المعالجة", confidence: "درجة الثقة", networkNote: "تحتاج الفحوصات الجديدة إلى اتصال بالإنترنت وتعمل على الخادم." },
+  settings: { title: "إعدادات الحساب", displayName: "الاسم الظاهر", language: "اللغة المفضلة", save: "حفظ الإعدادات", saved: "تم حفظ الإعدادات." },
+  severity: { critical: "حرجة", high: "عالية", medium: "متوسطة", low: "منخفضة", info: "معلوماتية" },
+  status: { running: "قيد التنفيذ", completed: "مكتمل", failed: "فاشل", passed: "ناجح", info: "معلومة", inconclusive: "غير حاسم" },
+  footer: "حِصن — مشروع تخرج دبلوم الحوسبة. افحص فقط المواقع المصرّح لك بتقييمها.",
+};
+
+export type Lang = "en" | "ar";
+
+export async function getDict(): Promise<{ lang: Lang; t: Dict }> {
+  // Arabic is the default; English only when the visitor chose it.
+  const lang = (await cookies()).get("lang")?.value === "en" ? "en" : "ar";
+  return { lang, t: lang === "ar" ? ar : en };
+}
