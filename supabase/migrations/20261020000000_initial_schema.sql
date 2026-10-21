@@ -4,7 +4,7 @@
 create table public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   display_name text not null default '' check (char_length(display_name) <= 60),
-  preferred_language text not null default 'en' check (preferred_language in ('en', 'ar')),
+  preferred_language text not null default 'ar' check (preferred_language in ('en', 'ar')),
   created_at timestamptz not null default now()
 );
 

@@ -41,6 +41,7 @@ Without Supabase variables the public pages work and protected pages show a setu
 | `npm test` | Unit + scanner tests (Vitest) |
 | `npm run test:rls` | Migration + RLS tests on a local PostgreSQL (`su postgres -c "npm run test:rls"`) |
 | `npm run e2e` | Browser tests of public pages, headers and PWA (needs `npm run build` first) |
+| `npm run e2e:auth` | Full logged-in workflow against your Supabase project (needs `.env.local` and the two test users from `tests/supabase/create-test-users.sql`; delete them afterwards) |
 
 ## Live scanning
 

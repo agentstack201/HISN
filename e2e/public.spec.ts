@@ -59,7 +59,7 @@ test("homepage links point to real destinations", async ({ page, request }) => {
 
 test("protected pages require configuration/login", async ({ page }) => {
   await page.goto("/dashboard");
-  await expect(page).toHaveURL(/\/setup$/);
+  await expect(page).toHaveURL(/\/(setup|login)$/); // /setup without Supabase config, /login with it
 });
 
 test("security headers and PWA files are served", async ({ request }) => {
