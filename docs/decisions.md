@@ -15,3 +15,4 @@
 | D11 | Live scanning off by default (`LIVE_SCANNING_ENABLED`) | Required by the project brief until protections are verified in the deployment environment. |
 | D12 | Light i18n via a dictionary + cookie, not a routing library | A few dozen strings; a library would add configuration with little benefit. |
 | D13 | RLS tested on plain PostgreSQL with a small `auth` shim | Supabase credentials/Docker are not available in the development container; the shim reproduces `auth.uid()` and roles. |
+| D14 | No `loading.tsx` in `app/(app)/` | Measured: with it, clicking a severity filter (same page, new `?severity=`) failed to navigate in about half of the attempts in production builds; without it 6/6 succeeded and the authenticated e2e suite passes. Skeletons are not worth a broken filter. |

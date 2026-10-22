@@ -7,7 +7,7 @@ const B = "hisn-test-b@example.com";
 async function login(page: Page, email: string) {
   await page.goto("/login");
   await page.getByLabel("البريد الإلكتروني").fill(email);
-  await page.getByLabel("كلمة المرور").fill(PASSWORD);
+  await page.getByLabel("كلمة المرور", { exact: true }).fill(PASSWORD);
   await page.getByRole("button", { name: "دخول" }).click();
   await expect(page).toHaveURL(/\/dashboard$/, { timeout: 20_000 });
 }
@@ -20,7 +20,8 @@ test.describe.serial("authenticated workflow", () => {
     await login(page, A);
     for (let i = 0; i < 10; i++) {
       await page.goto("/targets");
-      const link = page.locator("table a").first();
+      await page.waitForLoadState("networkidle");
+      const link = page.locator("main a[href^='/targets/']").first();
       if (!(await link.count())) break;
       await link.click();
       await page.getByRole("button", { name: "حذف" }).click();
@@ -31,14 +32,14 @@ test.describe.serial("authenticated workflow", () => {
   test("wrong password is rejected with a generic message", async ({ page }) => {
     await page.goto("/login");
     await page.getByLabel("البريد الإلكتروني").fill(A);
-    await page.getByLabel("كلمة المرور").fill("wrong-password-1");
+    await page.getByLabel("كلمة المرور", { exact: true }).fill("wrong-password-1");
     await page.getByRole("button", { name: "دخول" }).click();
     await expect(page.locator("form [role=alert]")).toContainText("Invalid email or password");
   });
 
   test("A: login, dashboard is empty, add target, unsafe URLs rejected", async ({ page }) => {
     await login(page, A);
-    await expect(page.getByText("لا توجد فحوصات بعد")).toBeVisible();
+    await expect(page.getByText("لوحة التحكم فارغة")).toBeVisible(); // empty-state title on a new account
     await page.goto("/targets");
     for (const bad of ["http://169.254.169.254", "http://localhost"]) {
       await page.getByLabel("الاسم").fill("bad");
@@ -67,9 +68,10 @@ test.describe.serial("authenticated workflow", () => {
     await expect(page).toHaveURL(/\/scans\/[0-9a-f-]{36}$/, { timeout: 60_000 });
     scanPath = new URL(page.url()).pathname;
     await expect(page.getByText("ترويسة Content-Security-Policy (CSP) غير موجودة")).toBeVisible(); // Arabic finding text
-    await expect(page.getByText("الدليل:").first()).toBeVisible();
+    await expect(page.getByText("الدليل", { exact: true }).first()).toBeVisible(); // evidence block label
+    await page.waitForLoadState("networkidle"); // let the page hydrate before using client-side links
     await page.getByRole("link", { name: /^منخفضة/ }).click();
-    await expect(page).toHaveURL(/severity=low/);
+    await expect(page).toHaveURL(/severity=low/, { timeout: 15_000 });
     const res = await page.request.get(`${scanPath}/report`);
     expect(res.status()).toBe(200);
     expect(res.headers()["content-type"]).toBe("application/pdf");
@@ -95,7 +97,7 @@ test.describe.serial("authenticated workflow", () => {
 
   test("B cannot see or download A's data", async ({ page }) => {
     await login(page, B);
-    await expect(page.getByText("لا توجد فحوصات بعد")).toBeVisible();
+    await expect(page.getByText("لوحة التحكم فارغة")).toBeVisible();
     expect((await page.goto(targetPath))?.status()).toBe(404);
     expect((await page.goto(scanPath))?.status()).toBe(404);
     expect((await page.request.get(`${scanPath}/report`)).status()).toBe(404);
