@@ -121,7 +121,12 @@ export function PageHeader({ title, subtitle, children }: { title: string; subti
     <header className="mb-6 flex flex-wrap items-end justify-between gap-4 border-b border-navy-800 pb-5">
       <div>
         <h1 className="page-title">{title}</h1>
-        {subtitle && <p className="page-sub">{subtitle}</p>}
+        {/* bdi isolates the text direction, so a URL subtitle stays "https://…/" inside an Arabic page. */}
+        {subtitle && (
+          <p className="page-sub">
+            <bdi>{subtitle}</bdi>
+          </p>
+        )}
       </div>
       {children}
     </header>

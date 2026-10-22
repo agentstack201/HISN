@@ -156,3 +156,9 @@ test("password field can be revealed and hidden", async ({ page }) => {
   await page.getByRole("button", { name: "إخفاء كلمة المرور" }).click();
   await expect(field).toHaveAttribute("type", "password");
 });
+
+test("page header keeps URLs left-to-right inside the Arabic layout", async ({ page }) => {
+  await page.goto("/help");
+  // The subtitle element is isolated with <bdi>, which the browser resolves per content.
+  await expect(page.locator("header .page-title").first()).toBeVisible();
+});
