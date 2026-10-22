@@ -110,7 +110,6 @@ export default async function DashboardPage() {
                 <tbody>
                   {allScans.slice(0, 5).map((s) => (
                     <tr key={s.id}>
-                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                       <td>
                         <Link className="link" href={`/scans/${s.id}`}>
                           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}

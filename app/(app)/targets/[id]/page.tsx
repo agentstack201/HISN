@@ -8,6 +8,7 @@ import { ActionForm, SubmitButton } from "@/components/forms";
 import TargetFields from "@/components/TargetFields";
 import { EmptyState, PageHeader, StatusText } from "@/components/ui";
 import Reveal from "@/components/Reveal";
+import ScanButton from "@/components/ScanButton";
 
 export const metadata = { title: "Target" };
 
@@ -27,19 +28,13 @@ export default async function TargetPage({ params }: { params: Promise<{ id: str
       <PageHeader title={target.name} subtitle={target.url}>
         <ActionForm action={startScan} className="flex flex-col items-end gap-2">
           <input type="hidden" name="target_id" value={target.id} />
-          <SubmitButton className="btn-hero min-h-11 px-6 py-2 text-sm" pendingLabel={t.ui.scanning}>
-            <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="7" />
-              <path d="m20 20-3.5-3.5" />
-            </svg>
-            {t.targets.scan}
-          </SubmitButton>
+          <ScanButton label={t.targets.scan} pendingLabel={t.ui.scanning} note={t.ui.scanRunning} steps={[...t.ui.scanSteps]} />
           {!scanningEnabled && <p className="text-xs text-warm">Live scanning is disabled on this deployment.</p>}
         </ActionForm>
       </PageHeader>
-      <p className="-mt-2 text-sm text-muted">{t.scans.networkNote} {t.ui.scanRunning}</p>
+      <p className="-mt-2 text-sm text-muted">{t.scans.networkNote}</p>
 
-      <section className="card overflow-x-auto">
+      <Reveal as="section" className="card overflow-x-auto">
         <h2 className="mb-4 font-semibold">{t.targets.history}</h2>
         {!scans?.length ? (
           <EmptyState title={t.ui.emptyScansTitle} text={t.ui.emptyScansText} />
@@ -57,7 +52,7 @@ export default async function TargetPage({ params }: { params: Promise<{ id: str
             </tbody>
           </table>
         )}
-      </section>
+      </Reveal>
 
       <section className="card max-w-xl">
         <h2 className="mb-4 font-semibold">{t.targets.edit}</h2>
