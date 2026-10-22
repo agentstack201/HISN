@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/supabase/server";
-import { getDict } from "@/lib/i18n";
+import { formatDateTime, getDict } from "@/lib/i18n";
 import { uuidSchema } from "@/lib/validation";
 import { deleteTarget, startScan, updateTarget } from "@/app/actions";
 import { ActionForm, SubmitButton } from "@/components/forms";
@@ -16,7 +16,7 @@ export default async function TargetPage({ params }: { params: Promise<{ id: str
   const { id } = await params;
   if (!uuidSchema.safeParse(id).success) notFound();
   const { supabase } = await requireUser();
-  const { t } = await getDict();
+  const { lang, t } = await getDict();
 
   const { data: target } = await supabase.from("targets").select("id, name, url").eq("id", id).single();
   if (!target) notFound(); // RLS hides other users' targets, so this also covers "not yours"
@@ -44,7 +44,7 @@ export default async function TargetPage({ params }: { params: Promise<{ id: str
             <tbody>
               {scans.map((s) => (
                 <tr key={s.id}>
-                  <td>{new Date(s.started_at).toLocaleString()}</td>
+                  <td>{formatDateTime(s.started_at, lang)}</td>
                   <td><StatusText status={s.status} label={t.status[s.status as keyof typeof t.status]} /></td>
                   <td><Link className="link" href={`/scans/${s.id}`}>→</Link></td>
                 </tr>

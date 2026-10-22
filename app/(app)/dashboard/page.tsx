@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
-import { getDict } from "@/lib/i18n";
+import { formatDateTime, getDict } from "@/lib/i18n";
 import { SEVERITY_ORDER, type Severity } from "@/lib/security-checks";
 import { securityScore } from "@/lib/reports";
 import { EmptyState, PageHeader, ScoreRing, SeverityBadge, Stat, StatusText } from "@/components/ui";
@@ -10,7 +10,7 @@ export const metadata = { title: "Dashboard" };
 
 export default async function DashboardPage() {
   const { supabase } = await requireUser();
-  const { t } = await getDict();
+  const { lang, t } = await getDict();
 
   // All numbers come from the database; RLS limits every query to this user's rows.
   const [{ count: targetCount }, { data: scans }] = await Promise.all([
@@ -119,7 +119,7 @@ export default async function DashboardPage() {
                       <td>
                         <StatusText status={s.status} label={t.status[s.status as keyof typeof t.status]} />
                       </td>
-                      <td className="text-muted">{new Date(s.started_at).toLocaleString()}</td>
+                      <td className="text-muted">{formatDateTime(s.started_at, lang)}</td>
                     </tr>
                   ))}
                 </tbody>

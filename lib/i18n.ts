@@ -165,6 +165,16 @@ const ar: Dict = {
 
 export type Lang = "en" | "ar";
 
+/**
+ * Formats a database timestamp for display. Pages render on the server, whose
+ * clock is UTC, so the time zone is set explicitly to Saudi Arabia (Asia/Riyadh)
+ * and Gregorian dates with Latin digits are used in both languages.
+ */
+export function formatDateTime(iso: string, lang: Lang): string {
+  const locale = lang === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-GB";
+  return new Intl.DateTimeFormat(locale, { timeZone: "Asia/Riyadh", dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
+}
+
 export async function getDict(): Promise<{ lang: Lang; t: Dict }> {
   // Arabic is the default; English only when the visitor chose it.
   const lang = (await cookies()).get("lang")?.value === "en" ? "en" : "ar";

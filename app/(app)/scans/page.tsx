@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
-import { getDict } from "@/lib/i18n";
+import { formatDateTime, getDict } from "@/lib/i18n";
 import { uuidSchema } from "@/lib/validation";
 import { localizeFinding } from "@/lib/finding-text";
 import { EmptyState, PageHeader, StatusText } from "@/components/ui";
@@ -46,7 +46,7 @@ export default async function ScansPage({ searchParams }: { searchParams: Promis
                   {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   <td><Link className="link" href={`/scans/${s.id}`}>{(s.targets as any)?.name}</Link></td>
                   <td><StatusText status={s.status} label={t.status[s.status as keyof typeof t.status]} /></td>
-                  <td>{new Date(s.started_at).toLocaleString()}</td>
+                  <td>{formatDateTime(s.started_at, lang)}</td>
                 </tr>
               ))}
             </tbody>

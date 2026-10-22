@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/supabase/server";
-import { getDict } from "@/lib/i18n";
+import { formatDateTime, getDict } from "@/lib/i18n";
 import { loadScan, securityScore } from "@/lib/reports";
 import { localizeFinding } from "@/lib/finding-text";
 import { SEVERITY_ORDER, type Severity } from "@/lib/security-checks";
@@ -40,8 +40,8 @@ export default async function ScanPage({ params, searchParams }: { params: Promi
       <p className="-mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         <StatusText status={scan.status} label={t.status[scan.status]} />
         <span className="text-muted">
-          {t.scans.started}: {new Date(scan.started_at).toLocaleString()}
-          {scan.completed_at && <> · {t.scans.completed}: {new Date(scan.completed_at).toLocaleString()}</>}
+          {t.scans.started}: {formatDateTime(scan.started_at, lang)}
+          {scan.completed_at && <> · {t.scans.completed}: {formatDateTime(scan.completed_at, lang)}</>}
         </span>
       </p>
 
