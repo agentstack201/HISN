@@ -29,7 +29,7 @@ export default async function TargetPage({ params }: { params: Promise<{ id: str
         <ActionForm action={startScan} className="flex flex-col items-end gap-2">
           <input type="hidden" name="target_id" value={target.id} />
           <ScanButton label={t.targets.scan} pendingLabel={t.ui.scanning} note={t.ui.scanRunning} steps={[...t.ui.scanSteps]} />
-          {!scanningEnabled && <p className="text-xs text-warm">Live scanning is disabled on this deployment.</p>}
+          {!scanningEnabled && <p className="text-xs text-warm">{t.ui.scanningDisabled}</p>}
         </ActionForm>
       </PageHeader>
       <p className="-mt-2 text-sm text-muted">{t.scans.networkNote}</p>
@@ -64,7 +64,7 @@ export default async function TargetPage({ params }: { params: Promise<{ id: str
         <form action={deleteTarget} className="mt-6 border-t border-navy-800 pt-4">
           <input type="hidden" name="id" value={target.id} />
           <SubmitButton className="btn-danger" pendingLabel={t.ui.saving}>{t.targets.delete}</SubmitButton>
-          <p className="mt-2 text-xs text-muted">Deleting a target also deletes its scans and findings.</p>
+          <p className="mt-2 text-xs text-muted">{t.ui.deleteNote}</p>
         </form>
       </section>
     </div>
