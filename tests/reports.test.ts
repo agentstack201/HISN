@@ -31,6 +31,10 @@ describe("securityScore", () => {
     expect(securityScore([{ ...finding }, { ...finding, status: "passed" as const }])).toMatchObject({ score: 92, grade: "A" });
     expect(securityScore(Array(20).fill({ ...finding, severity: "high" })).score).toBe(0);
   });
+  it("grades any 0-100 score with the same thresholds", async () => {
+    const { gradeFor } = await import("@/lib/reports");
+    expect([95, 85, 70, 55, 20].map((s) => gradeFor(s).grade)).toEqual(["A", "B", "C", "D", "F"]);
+  });
 });
 
 describe("buildReport", () => {

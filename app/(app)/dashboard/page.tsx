@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
 import { formatDateTime, getDict } from "@/lib/i18n";
 import { SEVERITY_ORDER, type Severity } from "@/lib/security-checks";
-import { securityScore } from "@/lib/reports";
+import { gradeFor, securityScore } from "@/lib/reports";
 import { EmptyState, PageHeader, ScoreRing, SeverityBadge, Stat, StatusText } from "@/components/ui";
 import Reveal from "@/components/Reveal";
 
@@ -25,15 +25,22 @@ export default async function DashboardPage() {
     if (s.status === "completed" && !latestPerTarget.has(s.target_id)) latestPerTarget.set(s.target_id, s.id);
   }
   const bySeverity: Record<Severity, number> = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
-  let latestFindings: { severity: Severity; status: string }[] = [];
+  let latestFindings: { scan_id: string; severity: Severity; status: string }[] = [];
   if (latestPerTarget.size > 0) {
-    const { data: findings } = await supabase.from("findings").select("severity, status").in("scan_id", [...latestPerTarget.values()]);
+    const { data: findings } = await supabase.from("findings").select("scan_id, severity, status").in("scan_id", [...latestPerTarget.values()]);
     latestFindings = (findings ?? []) as typeof latestFindings;
     for (const f of latestFindings) if (f.status === "failed") bySeverity[f.severity]++;
   }
   const maxCount = Math.max(1, ...Object.values(bySeverity));
-  // Average score across the latest scan of every target (same rule as the PDF report).
-  const score = latestFindings.length ? securityScore(latestFindings as never) : null;
+
+  // Average of each target's own score (latest scan per target), using the same
+  // rule as the PDF report. Scoring all findings together would wrongly add up
+  // the penalties of different websites.
+  let score: ReturnType<typeof securityScore> | null = null;
+  if (latestFindings.length) {
+    const perTarget = [...latestPerTarget.values()].map((scanId) => securityScore(latestFindings.filter((f) => f.scan_id === scanId) as never).score);
+    score = gradeFor(Math.round(perTarget.reduce((a, b) => a + b, 0) / perTarget.length));
+  }
 
   return (
     <div className="space-y-8">
