@@ -1,0 +1,164 @@
+name: Deploy HISN
+
+on:
+  workflow_dispatch:
+    inputs:
+      supabase_token:
+        description: 'Supabase Access Token'
+        required: true
+      netlify_token:
+        description: 'Netlify Auth Token'
+        required: true
+
+jobs:
+  setup-supabase:
+    runs-on: ubuntu-latest
+    outputs:
+      supabase_url: ${{ steps.creds.outputs.supabase_url }}
+      anon_key: ${{ steps.creds.outputs.anon_key }}
+      project_id: ${{ steps.create.outputs.project_id }}
+
+    steps:
+      - name: Get organization
+        id: org
+        run: |
+          ORG_ID=$(curl -s https://api.supabase.com/v1/organizations \
+            -H "Authorization: Bearer ${{ github.event.inputs.supabase_token }}" \
+            | jq -r '.[0].id')
+          echo "org_id=$ORG_ID" >> $GITHUB_OUTPUT
+
+      - name: Create Supabase project
+        id: create
+        run: |
+          DB_PASS=$(openssl rand -base64 24 | tr -d '/+=' | head -c 24)
+          RESPONSE=$(curl -s -X POST https://api.supabase.com/v1/projects \
+            -H "Authorization: Bearer ${{ github.event.inputs.supabase_token }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"name\": \"hisn\",
+              \"organization_id\": \"${{ steps.org.outputs.org_id }}\",
+              \"plan\": \"free\",
+              \"region\": \"ap-southeast-1\",
+              \"db_pass\": \"${DB_PASS}\"
+            }")
+          echo "$RESPONSE"
+          PROJECT_ID=$(echo "$RESPONSE" | jq -r '.id')
+          echo "project_id=$PROJECT_ID" >> $GITHUB_OUTPUT
+          echo "db_pass=$DB_PASS" >> $GITHUB_OUTPUT
+
+      - name: Wait for project to be ready
+        run: |
+          PROJECT_ID="${{ steps.create.outputs.project_id }}"
+          echo "Waiting for project $PROJECT_ID to be ready..."
+          for i in $(seq 1 24); do
+            STATUS=$(curl -s "https://api.supabase.com/v1/projects/$PROJECT_ID" \
+              -H "Authorization: Bearer ${{ github.event.inputs.supabase_token }}" \
+              | jq -r '.status')
+            echo "Status: $STATUS"
+            if [ "$STATUS" = "ACTIVE_HEALTHY" ]; then
+              echo "Project is ready!"
+              break
+            fi
+            sleep 10
+          done
+
+      - name: Run migrations
+        run: |
+          PROJECT_ID="${{ steps.create.outputs.project_id }}"
+          DB_PASS="${{ steps.create.outputs.db_pass }}"
+          # Get DB connection info
+          DB_HOST="${PROJECT_ID}.supabase.co"
+          PGPASSWORD="$DB_PASS" psql \
+            -h "db.${PROJECT_ID}.supabase.co" \
+            -U postgres \
+            -d postgres \
+            -f - << 'SQLEOF'
+          $(cat supabase/migrations/20261020000000_initial_schema.sql)
+          SQLEOF
+        continue-on-error: true
+
+      - name: Run migrations via API
+        run: |
+          PROJECT_ID="${{ steps.create.outputs.project_id }}"
+          SQL=$(cat supabase/migrations/20261020000000_initial_schema.sql)
+          curl -s -X POST "https://api.supabase.com/v1/projects/$PROJECT_ID/database/query" \
+            -H "Authorization: Bearer ${{ github.event.inputs.supabase_token }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\": $(echo "$SQL" | jq -Rs .)}"
+
+      - name: Get API credentials
+        id: creds
+        run: |
+          PROJECT_ID="${{ steps.create.outputs.project_id }}"
+          KEYS=$(curl -s "https://api.supabase.com/v1/projects/$PROJECT_ID/api-keys" \
+            -H "Authorization: Bearer ${{ github.event.inputs.supabase_token }}")
+          echo "$KEYS"
+          ANON_KEY=$(echo "$KEYS" | jq -r '.[] | select(.name=="anon") | .api_key')
+          SUPABASE_URL="https://${PROJECT_ID}.supabase.co"
+          echo "supabase_url=$SUPABASE_URL" >> $GITHUB_OUTPUT
+          echo "anon_key=$ANON_KEY" >> $GITHUB_OUTPUT
+          echo "✅ Supabase URL: $SUPABASE_URL"
+
+  deploy-netlify:
+    runs-on: ubuntu-latest
+    needs: setup-supabase
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ needs.setup-supabase.outputs.supabase_url }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ needs.setup-supabase.outputs.anon_key }}
+        run: npm run build
+
+      - name: Create Netlify site
+        id: netlify-site
+        run: |
+          SITE=$(curl -s -X POST https://api.netlify.com/api/v1/sites \
+            -H "Authorization: Bearer ${{ github.event.inputs.netlify_token }}" \
+            -H "Content-Type: application/json" \
+            -d '{"name": "hisn-app"}')
+          echo "$SITE"
+          SITE_ID=$(echo "$SITE" | jq -r '.id')
+          SITE_URL=$(echo "$SITE" | jq -r '.ssl_url // .url')
+          echo "site_id=$SITE_ID" >> $GITHUB_OUTPUT
+          echo "site_url=$SITE_URL" >> $GITHUB_OUTPUT
+
+      - name: Set Netlify env vars
+        run: |
+          curl -s -X PATCH "https://api.netlify.com/api/v1/sites/${{ steps.netlify-site.outputs.site_id }}" \
+            -H "Authorization: Bearer ${{ github.event.inputs.netlify_token }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"build_settings\": {
+                \"env\": {
+                  \"NEXT_PUBLIC_SUPABASE_URL\": \"${{ needs.setup-supabase.outputs.supabase_url }}\",
+                  \"NEXT_PUBLIC_SUPABASE_ANON_KEY\": \"${{ needs.setup-supabase.outputs.anon_key }}\"
+                }
+              }
+            }"
+
+      - name: Deploy to Netlify
+        run: |
+          npm install -g netlify-cli
+          netlify deploy --prod \
+            --auth ${{ github.event.inputs.netlify_token }} \
+            --site ${{ steps.netlify-site.outputs.site_id }} \
+            --dir .next \
+            --framework next
+
+      - name: Output final URL
+        run: |
+          echo "🎉 ========================================"
+          echo "✅ Supabase: ${{ needs.setup-supabase.outputs.supabase_url }}"
+          echo "🌐 Site URL: ${{ steps.netlify-site.outputs.site_url }}"
+          echo "========================================="
