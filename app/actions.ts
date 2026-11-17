@@ -23,9 +23,14 @@ export async function signIn(_prev: FormState, form: FormData): Promise<FormStat
   const parsed = credentialsSchema.safeParse(Object.fromEntries(form));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  let result: Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>;
+  try {
+    result = await supabase.auth.signInWithPassword(parsed.data);
+  } catch {
+    return { error: "خطأ في الاتصال بالخادم. حاول مرة أخرى." };
+  }
   // Same message for unknown email and wrong password (no account enumeration).
-  if (error) return { error: "Invalid email or password" };
+  if (result.error) return { error: "Invalid email or password" };
   redirect("/dashboard");
 }
 
@@ -33,9 +38,14 @@ export async function signUp(_prev: FormState, form: FormData): Promise<FormStat
   const parsed = credentialsSchema.safeParse(Object.fromEntries(form));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp(parsed.data);
-  if (error) return { error: error.message };
-  if (data.session) redirect("/dashboard"); // email confirmation disabled
+  let result: Awaited<ReturnType<typeof supabase.auth.signUp>>;
+  try {
+    result = await supabase.auth.signUp(parsed.data);
+  } catch {
+    return { error: "خطأ في الاتصال بالخادم. حاول مرة أخرى." };
+  }
+  if (result.error) return { error: result.error.message };
+  if (result.data.session) redirect("/dashboard"); // email confirmation disabled
   return { message: "check-email" };
 }
 
