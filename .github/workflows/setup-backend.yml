@@ -21,7 +21,7 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_PROJECT: hisn
-      SITE_URL: https://hisn-delta.vercel.app
+      SITE_URL: https://hisn-eta.vercel.app
     defaults:
       run:
         shell: bash
@@ -66,7 +66,7 @@ jobs:
               exit 0
             fi
           done
-          echo "::error::This Vercel token cannot see a project named '$VERCEL_PROJECT'. Create the token from the Vercel account that owns hisn-delta.vercel.app."
+          echo "::error::This Vercel token cannot see a project named '$VERCEL_PROJECT'. Create the token from the Vercel account that owns the HISN project."
           exit 1
 
       - name: Pick the Supabase project
