@@ -15,6 +15,6 @@ jobs:
         run: |
           for path in /api/health /register; do
             echo "== $path"
-            curl -sS -A "hisn-check/1.0" -o "$RUNNER_TEMP/out" -w "HTTP %{http_code}\n" "https://hisn-delta.vercel.app$path"
-            [ "$path" = "/api/health" ] && cat "$RUNNER_TEMP/out" && echo
+            curl -sS -A "hisn-check/1.0" -o "$RUNNER_TEMP/out" -w "HTTP %{http_code}\n" "https://hisn-eta.vercel.app$path"
+            if [ "$path" = "/api/health" ]; then cat "$RUNNER_TEMP/out"; echo; fi
           done
