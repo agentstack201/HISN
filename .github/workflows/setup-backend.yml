@@ -1,9 +1,14 @@
-name: Set up a new Supabase database and redeploy Vercel
+name: Set up Supabase and redeploy Vercel
 
 # Needs two repository secrets: SUPABASE_ACCESS_TOKEN (sbp_...) and VERCEL_TOKEN.
-# Every run creates a NEW Supabase project, so run it only when a fresh database is wanted.
+# Uses the Supabase project the token can reach (or project_ref), restores it if paused,
+# creates the tables if missing, turns off email confirmation and wires it into Vercel.
 on:
   workflow_dispatch:
+    inputs:
+      project_ref:
+        description: "Supabase project ref (optional; defaults to the first project the token can see)"
+        required: false
 
 permissions:
   contents: read
@@ -64,27 +69,31 @@ jobs:
           echo "::error::This Vercel token cannot see a project named '$VERCEL_PROJECT'. Create the token from the Vercel account that owns hisn-delta.vercel.app."
           exit 1
 
-      - name: Find the Supabase organization
+      - name: Pick the Supabase project
+        env:
+          INPUT_REF: ${{ inputs.project_ref }}
         run: |
           . "$RUNNER_TEMP/lib.sh"
-          orgs=$(sb "list organizations" https://api.supabase.com/v1/organizations)
-          org=$(echo "$orgs" | jq -r '.[0].id // empty')
-          [ -n "$org" ] || { echo "::error::This Supabase account has no organization. Create one at supabase.com/dashboard first."; exit 1; }
-          echo "Using organization: $(echo "$orgs" | jq -r '.[0].name')"
-          echo "SUPABASE_ORG=$org" >> "$GITHUB_ENV"
-
-      - name: Create the Supabase project
-        run: |
-          . "$RUNNER_TEMP/lib.sh"
-          pass=$(openssl rand -hex 24)
-          echo "::add-mask::$pass"
-          name="hisn-$(date +%Y%m%d%H%M)"
-          body=$(jq -n --arg org "$SUPABASE_ORG" --arg pass "$pass" --arg name "$name" \
-            '{name:$name, organization_id:$org, db_pass:$pass, region:"eu-central-1"}')
-          ref=$(sb "create project" -X POST https://api.supabase.com/v1/projects -d "$body" | jq -r '.id')
-          echo "Created project $name ($ref)"
+          ref="$INPUT_REF"
+          if [ -z "$ref" ]; then
+            projects=$(sb "list projects" https://api.supabase.com/v1/projects)
+            echo "Projects this token can use: $(echo "$projects" | jq -r '[.[].name] | join(", ")')"
+            ref=$(echo "$projects" | jq -r '.[0].id // empty')
+          fi
+          [ -n "$ref" ] || { echo "::error::This Supabase token cannot see any project."; exit 1; }
+          echo "Using project $ref"
           echo "REF=$ref" >> "$GITHUB_ENV"
           echo "SUPABASE_URL=https://$ref.supabase.co" >> "$GITHUB_ENV"
+
+      - name: Restore the project if it is paused
+        run: |
+          . "$RUNNER_TEMP/lib.sh"
+          status=$(sb "project status" "https://api.supabase.com/v1/projects/$REF" | jq -r '.status')
+          echo "status: $status"
+          if [ "$status" = "INACTIVE" ] || [ "$status" = "PAUSED" ]; then
+            sb "restore project" -X POST "https://api.supabase.com/v1/projects/$REF/restore" > /dev/null
+            echo "Restore requested"
+          fi
 
       - name: Wait until the project is healthy
         run: |
@@ -100,6 +109,13 @@ jobs:
       - name: Create the tables
         run: |
           . "$RUNNER_TEMP/lib.sh"
+          existing=""
+          for i in $(seq 1 12); do
+            if existing=$(sb "check tables (attempt $i)" -X POST -d '{"query":"select to_regclass('"'"'public.targets'"'"') is not null as present"}' \
+              "https://api.supabase.com/v1/projects/$REF/database/query" | jq -r '.[0].present'); then break; fi
+            sleep 15
+          done
+          if [ "$existing" = "true" ]; then echo "Tables already exist, keeping them"; exit 0; fi
           jq -n --rawfile q supabase/migrations/20261020000000_initial_schema.sql '{query:$q}' > "$RUNNER_TEMP/q.json"
           for i in $(seq 1 12); do
             if sb "apply schema (attempt $i)" -X POST -d @"$RUNNER_TEMP/q.json" "https://api.supabase.com/v1/projects/$REF/database/query" > /dev/null; then
