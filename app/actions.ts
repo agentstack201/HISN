@@ -9,6 +9,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient, requireUser } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { credentialsSchema, profileSchema, targetSchema, uuidSchema } from "@/lib/validation";
 import { runScan } from "@/lib/scanner";
 
@@ -38,6 +39,21 @@ export async function signUp(_prev: FormState, form: FormData): Promise<FormStat
   const parsed = credentialsSchema.safeParse(Object.fromEntries(form));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const supabase = await createClient();
+  const admin = createAdminClient();
+
+  // With the secret key, create the account already confirmed so no email is ever needed.
+  if (admin) {
+    try {
+      const created = await admin.auth.admin.createUser({ ...parsed.data, email_confirm: true });
+      if (created.error) return { error: created.error.message };
+      const signedIn = await supabase.auth.signInWithPassword(parsed.data);
+      if (signedIn.error) return { error: signedIn.error.message };
+    } catch {
+      return { error: "خطأ في الاتصال بالخادم. حاول مرة أخرى." };
+    }
+    redirect("/dashboard");
+  }
+
   let result: Awaited<ReturnType<typeof supabase.auth.signUp>>;
   try {
     result = await supabase.auth.signUp(parsed.data);
