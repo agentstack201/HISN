@@ -1,0 +1,125 @@
+name: Set up a new Supabase database and redeploy Vercel
+
+# Needs two repository secrets: SUPABASE_ACCESS_TOKEN (sbp_...) and VERCEL_TOKEN.
+# Every run creates a NEW Supabase project, so run it only when a fresh database is wanted.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_TEAM: ksjdjjsjjs-projects
+      VERCEL_PROJECT: hisn
+      SITE_URL: https://hisn-delta.vercel.app
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check secrets
+        run: |
+          [ -n "$SUPABASE_ACCESS_TOKEN" ] || { echo "::error::Add the SUPABASE_ACCESS_TOKEN repository secret"; exit 1; }
+          [ -n "$VERCEL_TOKEN" ] || { echo "::error::Add the VERCEL_TOKEN repository secret"; exit 1; }
+
+      - name: Create the Supabase project
+        run: |
+          set -euo pipefail
+          api() { curl -sS --fail-with-body -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" "$@"; }
+          org=$(api https://api.supabase.com/v1/organizations | jq -r '.[0].id')
+          pass=$(openssl rand -hex 24)
+          echo "::add-mask::$pass"
+          name="hisn-$(date +%Y%m%d%H%M)"
+          body=$(jq -n --arg org "$org" --arg pass "$pass" --arg name "$name" \
+            '{name:$name, organization_id:$org, db_pass:$pass, region:"eu-central-1"}')
+          ref=$(api -X POST https://api.supabase.com/v1/projects -d "$body" | jq -r '.id')
+          echo "Created project $name ($ref)"
+          echo "REF=$ref" >> "$GITHUB_ENV"
+          echo "SUPABASE_URL=https://$ref.supabase.co" >> "$GITHUB_ENV"
+
+      - name: Wait until the project is healthy
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 60); do
+            status=$(curl -sS -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" "https://api.supabase.com/v1/projects/$REF" | jq -r '.status')
+            echo "status: $status"
+            [ "$status" = "ACTIVE_HEALTHY" ] && exit 0
+            sleep 10
+          done
+          echo "::error::The project did not become healthy in 10 minutes"; exit 1
+
+      - name: Create the tables
+        run: |
+          set -euo pipefail
+          jq -n --rawfile q supabase/migrations/20261020000000_initial_schema.sql '{query:$q}' > "$RUNNER_TEMP/q.json"
+          for i in $(seq 1 12); do
+            if curl -sS --fail-with-body -X POST -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
+              -d @"$RUNNER_TEMP/q.json" "https://api.supabase.com/v1/projects/$REF/database/query"; then
+              echo; echo "Schema applied"; exit 0
+            fi
+            echo; echo "Database not ready yet, retrying"; sleep 15
+          done
+          exit 1
+
+      - name: Turn off email confirmation
+        run: |
+          set -euo pipefail
+          curl -sS --fail-with-body -X PATCH -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
+            -d "$(jq -n --arg u "$SITE_URL" '{mailer_autoconfirm:true, site_url:$u}')" \
+            "https://api.supabase.com/v1/projects/$REF/config/auth" > /dev/null
+          echo "Email confirmation is off"
+
+      - name: Read the project keys
+        run: |
+          set -euo pipefail
+          keys=$(curl -sS --fail-with-body -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" "https://api.supabase.com/v1/projects/$REF/api-keys?reveal=true")
+          anon=$(echo "$keys" | jq -r '.[] | select(.name=="anon") | .api_key')
+          service=$(echo "$keys" | jq -r '.[] | select(.name=="service_role") | .api_key')
+          echo "::add-mask::$service"
+          [ -n "$anon" ] && [ -n "$service" ] || { echo "::error::Could not read the project keys"; exit 1; }
+          echo "ANON_KEY=$anon" >> "$GITHUB_ENV"
+          echo "SERVICE_KEY=$service" >> "$GITHUB_ENV"
+
+      - name: Test a sign-up with a made-up email
+        run: |
+          set -euo pipefail
+          email="hisn-check-$(openssl rand -hex 4)@gmail.com"
+          res=$(curl -sS -H "apikey: $ANON_KEY" -H "Content-Type: application/json" \
+            -d "$(jq -n --arg e "$email" '{email:$e, password:"CheckPass-12345"}')" "$SUPABASE_URL/auth/v1/signup")
+          token=$(echo "$res" | jq -r '.access_token // empty')
+          uid=$(echo "$res" | jq -r '.user.id // .id // empty')
+          [ -n "$uid" ] && curl -sS -X DELETE -H "apikey: $SERVICE_KEY" -H "Authorization: Bearer $SERVICE_KEY" \
+            "$SUPABASE_URL/auth/v1/admin/users/$uid" > /dev/null || true
+          [ -n "$token" ] || { echo "::error::Sign-up did not log the user in: $(echo "$res" | jq -c 'del(.access_token, .refresh_token)')"; exit 1; }
+          echo "Sign-up works without email confirmation"
+
+      - name: Save the keys in Vercel
+        run: |
+          set -euo pipefail
+          v() { curl -sS --fail-with-body -H "Authorization: Bearer $VERCEL_TOKEN" -H "Content-Type: application/json" "$@"; }
+          proj=$(v "https://api.vercel.com/v9/projects/$VERCEL_PROJECT?slug=$VERCEL_TEAM")
+          project_id=$(echo "$proj" | jq -r '.id')
+          echo "VERCEL_PROJECT_ID=$project_id" >> "$GITHUB_ENV"
+          echo "VERCEL_ORG_ID=$(echo "$proj" | jq -r '.accountId')" >> "$GITHUB_ENV"
+          put() {
+            v -X POST "https://api.vercel.com/v10/projects/$project_id/env?upsert=true&slug=$VERCEL_TEAM" \
+              -d "$(jq -n --arg k "$1" --arg val "$2" --arg t "$3" '{key:$k, value:$val, type:$t, target:["production","preview"]}')" > /dev/null
+            echo "Saved $1"
+          }
+          put NEXT_PUBLIC_SUPABASE_URL "$SUPABASE_URL" plain
+          put NEXT_PUBLIC_SUPABASE_ANON_KEY "$ANON_KEY" plain
+          put SUPABASE_SECRET_KEY "$SERVICE_KEY" sensitive
+
+      - name: Redeploy the site to production
+        run: npx --yes vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN"
+
+      - name: Check the live sign-up page
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" "$SITE_URL/register")
+          echo "$SITE_URL/register answered $code"
+          [ "$code" = "200" ]
+          echo "Done. New database: $SUPABASE_URL"
