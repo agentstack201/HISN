@@ -15,9 +15,11 @@ jobs:
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_TEAM: ksjdjjsjjs-projects
       VERCEL_PROJECT: hisn
       SITE_URL: https://hisn-delta.vercel.app
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
 
@@ -26,26 +28,69 @@ jobs:
           [ -n "$SUPABASE_ACCESS_TOKEN" ] || { echo "::error::Add the SUPABASE_ACCESS_TOKEN repository secret"; exit 1; }
           [ -n "$VERCEL_TOKEN" ] || { echo "::error::Add the VERCEL_TOKEN repository secret"; exit 1; }
 
+      - name: Prepare API helpers
+        run: |
+          cat > "$RUNNER_TEMP/lib.sh" <<'EOF'
+          set -euo pipefail
+          # call <label> <curl args...>: prints the body, or fails showing the API's own error message.
+          call() {
+            local label=$1; shift
+            local out code body
+            out=$(curl -sS -A "hisn-setup/1.0" -w $'\n%{http_code}' "$@") || { echo "::error::$label: network error" >&2; return 1; }
+            code=${out##*$'\n'}; body=${out%$'\n'*}
+            if [ "$code" -ge 300 ]; then echo "::error::$label failed (HTTP $code): ${body:0:600}" >&2; return 1; fi
+            printf '%s' "$body"
+          }
+          sb() { local label=$1; shift; call "Supabase: $label" -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" "$@"; }
+          vc() { local label=$1; shift; call "Vercel: $label" -H "Authorization: Bearer $VERCEL_TOKEN" -H "Content-Type: application/json" "$@"; }
+          EOF
+
+      - name: Find the Vercel project
+        run: |
+          . "$RUNNER_TEMP/lib.sh"
+          teams=$(vc "list teams" https://api.vercel.com/v2/teams | jq -r '.teams[]?.id')
+          for team in "" $teams; do
+            param=""; [ -n "$team" ] && param="teamId=$team"
+            code=$(curl -sS -A "hisn-setup/1.0" -o "$RUNNER_TEMP/project.json" -w '%{http_code}' \
+              -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$VERCEL_PROJECT${param:+?$param}")
+            if [ "$code" = "200" ]; then
+              echo "Found Vercel project $VERCEL_PROJECT ${team:+in team $team}"
+              echo "VERCEL_TEAM_PARAM=$param" >> "$GITHUB_ENV"
+              echo "VERCEL_PROJECT_ID=$(jq -r '.id' "$RUNNER_TEMP/project.json")" >> "$GITHUB_ENV"
+              echo "VERCEL_ORG_ID=$(jq -r '.accountId' "$RUNNER_TEMP/project.json")" >> "$GITHUB_ENV"
+              exit 0
+            fi
+          done
+          echo "::error::This Vercel token cannot see a project named '$VERCEL_PROJECT'. Create the token from the Vercel account that owns hisn-delta.vercel.app."
+          exit 1
+
+      - name: Find the Supabase organization
+        run: |
+          . "$RUNNER_TEMP/lib.sh"
+          orgs=$(sb "list organizations" https://api.supabase.com/v1/organizations)
+          org=$(echo "$orgs" | jq -r '.[0].id // empty')
+          [ -n "$org" ] || { echo "::error::This Supabase account has no organization. Create one at supabase.com/dashboard first."; exit 1; }
+          echo "Using organization: $(echo "$orgs" | jq -r '.[0].name')"
+          echo "SUPABASE_ORG=$org" >> "$GITHUB_ENV"
+
       - name: Create the Supabase project
         run: |
-          set -euo pipefail
-          api() { curl -sS --fail-with-body -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" "$@"; }
-          org=$(api https://api.supabase.com/v1/organizations | jq -r '.[0].id')
+          . "$RUNNER_TEMP/lib.sh"
           pass=$(openssl rand -hex 24)
           echo "::add-mask::$pass"
           name="hisn-$(date +%Y%m%d%H%M)"
-          body=$(jq -n --arg org "$org" --arg pass "$pass" --arg name "$name" \
+          body=$(jq -n --arg org "$SUPABASE_ORG" --arg pass "$pass" --arg name "$name" \
             '{name:$name, organization_id:$org, db_pass:$pass, region:"eu-central-1"}')
-          ref=$(api -X POST https://api.supabase.com/v1/projects -d "$body" | jq -r '.id')
+          ref=$(sb "create project" -X POST https://api.supabase.com/v1/projects -d "$body" | jq -r '.id')
           echo "Created project $name ($ref)"
           echo "REF=$ref" >> "$GITHUB_ENV"
           echo "SUPABASE_URL=https://$ref.supabase.co" >> "$GITHUB_ENV"
 
       - name: Wait until the project is healthy
         run: |
-          set -euo pipefail
+          . "$RUNNER_TEMP/lib.sh"
           for i in $(seq 1 60); do
-            status=$(curl -sS -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" "https://api.supabase.com/v1/projects/$REF" | jq -r '.status')
+            status=$(sb "project status" "https://api.supabase.com/v1/projects/$REF" | jq -r '.status')
             echo "status: $status"
             [ "$status" = "ACTIVE_HEALTHY" ] && exit 0
             sleep 10
@@ -54,29 +99,27 @@ jobs:
 
       - name: Create the tables
         run: |
-          set -euo pipefail
+          . "$RUNNER_TEMP/lib.sh"
           jq -n --rawfile q supabase/migrations/20261020000000_initial_schema.sql '{query:$q}' > "$RUNNER_TEMP/q.json"
           for i in $(seq 1 12); do
-            if curl -sS --fail-with-body -X POST -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
-              -d @"$RUNNER_TEMP/q.json" "https://api.supabase.com/v1/projects/$REF/database/query"; then
-              echo; echo "Schema applied"; exit 0
+            if sb "apply schema (attempt $i)" -X POST -d @"$RUNNER_TEMP/q.json" "https://api.supabase.com/v1/projects/$REF/database/query" > /dev/null; then
+              echo "Schema applied"; exit 0
             fi
-            echo; echo "Database not ready yet, retrying"; sleep 15
+            sleep 15
           done
           exit 1
 
       - name: Turn off email confirmation
         run: |
-          set -euo pipefail
-          curl -sS --fail-with-body -X PATCH -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
-            -d "$(jq -n --arg u "$SITE_URL" '{mailer_autoconfirm:true, site_url:$u}')" \
+          . "$RUNNER_TEMP/lib.sh"
+          sb "auth settings" -X PATCH -d "$(jq -n --arg u "$SITE_URL" '{mailer_autoconfirm:true, site_url:$u}')" \
             "https://api.supabase.com/v1/projects/$REF/config/auth" > /dev/null
           echo "Email confirmation is off"
 
       - name: Read the project keys
         run: |
-          set -euo pipefail
-          keys=$(curl -sS --fail-with-body -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" "https://api.supabase.com/v1/projects/$REF/api-keys?reveal=true")
+          . "$RUNNER_TEMP/lib.sh"
+          keys=$(sb "read keys" "https://api.supabase.com/v1/projects/$REF/api-keys?reveal=true")
           anon=$(echo "$keys" | jq -r '.[] | select(.name=="anon") | .api_key')
           service=$(echo "$keys" | jq -r '.[] | select(.name=="service_role") | .api_key')
           echo "::add-mask::$service"
@@ -86,27 +129,24 @@ jobs:
 
       - name: Test a sign-up with a made-up email
         run: |
-          set -euo pipefail
+          . "$RUNNER_TEMP/lib.sh"
           email="hisn-check-$(openssl rand -hex 4)@gmail.com"
-          res=$(curl -sS -H "apikey: $ANON_KEY" -H "Content-Type: application/json" \
+          res=$(call "Supabase: test sign-up" -H "apikey: $ANON_KEY" -H "Content-Type: application/json" \
             -d "$(jq -n --arg e "$email" '{email:$e, password:"CheckPass-12345"}')" "$SUPABASE_URL/auth/v1/signup")
           token=$(echo "$res" | jq -r '.access_token // empty')
           uid=$(echo "$res" | jq -r '.user.id // .id // empty')
-          [ -n "$uid" ] && curl -sS -X DELETE -H "apikey: $SERVICE_KEY" -H "Authorization: Bearer $SERVICE_KEY" \
-            "$SUPABASE_URL/auth/v1/admin/users/$uid" > /dev/null || true
-          [ -n "$token" ] || { echo "::error::Sign-up did not log the user in: $(echo "$res" | jq -c 'del(.access_token, .refresh_token)')"; exit 1; }
+          if [ -n "$uid" ]; then
+            curl -sS -A "hisn-setup/1.0" -X DELETE -H "apikey: $SERVICE_KEY" -H "Authorization: Bearer $SERVICE_KEY" \
+              "$SUPABASE_URL/auth/v1/admin/users/$uid" > /dev/null || true
+          fi
+          [ -n "$token" ] || { echo "::error::Sign-up did not log the user in"; exit 1; }
           echo "Sign-up works without email confirmation"
 
       - name: Save the keys in Vercel
         run: |
-          set -euo pipefail
-          v() { curl -sS --fail-with-body -H "Authorization: Bearer $VERCEL_TOKEN" -H "Content-Type: application/json" "$@"; }
-          proj=$(v "https://api.vercel.com/v9/projects/$VERCEL_PROJECT?slug=$VERCEL_TEAM")
-          project_id=$(echo "$proj" | jq -r '.id')
-          echo "VERCEL_PROJECT_ID=$project_id" >> "$GITHUB_ENV"
-          echo "VERCEL_ORG_ID=$(echo "$proj" | jq -r '.accountId')" >> "$GITHUB_ENV"
+          . "$RUNNER_TEMP/lib.sh"
           put() {
-            v -X POST "https://api.vercel.com/v10/projects/$project_id/env?upsert=true&slug=$VERCEL_TEAM" \
+            vc "save $1" -X POST "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env?upsert=true${VERCEL_TEAM_PARAM:+&$VERCEL_TEAM_PARAM}" \
               -d "$(jq -n --arg k "$1" --arg val "$2" --arg t "$3" '{key:$k, value:$val, type:$t, target:["production","preview"]}')" > /dev/null
             echo "Saved $1"
           }
