@@ -2,7 +2,7 @@ export const metadata = { title: "Setup required" };
 
 export default function SetupPage() {
   return (
-    <div className="mx-auto max-w-2xl card space-y-3">
+    <div className="mx-auto max-w-2xl card space-y-3 animate-[pop_var(--duration-slow)_var(--ease-out-soft)]">
       <h1 className="text-2xl font-semibold">Supabase is not configured</h1>
       <p className="text-muted">
         Accounts, targets and scans are stored in Supabase. Copy <code>.env.example</code> to <code>.env.local</code>, fill in

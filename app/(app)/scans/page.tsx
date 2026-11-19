@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
-import { getDict } from "@/lib/i18n";
+import { formatDateTime, getDict } from "@/lib/i18n";
 import { uuidSchema } from "@/lib/validation";
 import { localizeFinding } from "@/lib/finding-text";
-import { StatusText } from "@/components/ui";
+import { EmptyState, PageHeader, StatusText } from "@/components/ui";
 
 export const metadata = { title: "Scan history" };
 
@@ -31,9 +31,9 @@ export default async function ScansPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">{t.scans.title}</h1>
+      <PageHeader title={t.scans.title} subtitle={t.scans.networkNote} />
       {!scans?.length ? (
-        <p className="text-muted">{t.scans.none}</p>
+        <EmptyState title={t.ui.emptyScansTitle} text={t.ui.emptyScansText} />
       ) : (
         <form className="card overflow-x-auto" method="get">
           <table className="table">
@@ -46,12 +46,15 @@ export default async function ScansPage({ searchParams }: { searchParams: Promis
                   {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   <td><Link className="link" href={`/scans/${s.id}`}>{(s.targets as any)?.name}</Link></td>
                   <td><StatusText status={s.status} label={t.status[s.status as keyof typeof t.status]} /></td>
-                  <td>{new Date(s.started_at).toLocaleString()}</td>
+                  <td>{formatDateTime(s.started_at, lang)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <button className="btn mt-4">{t.scans.compare}</button>
+          <button className="btn mt-4">
+            <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M8 7h12m0 0-3-3m3 3-3 3M16 17H4m0 0 3-3m-3 3 3 3" /></svg>
+            {t.scans.compare}
+          </button>
         </form>
       )}
 
@@ -62,7 +65,7 @@ export default async function ScansPage({ searchParams }: { searchParams: Promis
             <thead><tr><th>Check</th><th>A</th><th>B</th></tr></thead>
             <tbody>
               {comparison.map((row) => (
-                <tr key={row.key} className={row.a !== row.b ? "bg-navy-800" : ""}>
+                <tr key={row.key} className={row.a !== row.b ? "bg-cyan/5" : ""}>
                   <td>{row.title}<div className="text-xs text-muted">{row.key}</div></td>
                   <td>{row.a ? <StatusText status={row.a} label={t.status[row.a as keyof typeof t.status]} /> : "—"}</td>
                   <td>{row.b ? <StatusText status={row.b} label={t.status[row.b as keyof typeof t.status]} /> : "—"}</td>

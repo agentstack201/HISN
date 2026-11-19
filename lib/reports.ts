@@ -67,7 +67,11 @@ const PENALTY: Record<Severity, number> = { critical: 25, high: 15, medium: 8, l
 export function securityScore(findings: Finding[]): { score: number; grade: string; label: string } {
   let score = 100;
   for (const f of findings) if (f.status === "failed") score -= PENALTY[f.severity];
-  score = Math.max(0, score);
+  return gradeFor(Math.max(0, score));
+}
+
+/** Grade and risk label for a 0-100 score (also used for the dashboard average). */
+export function gradeFor(score: number): { score: number; grade: string; label: string } {
   if (score >= 90) return { score, grade: "A", label: "Low risk" };
   if (score >= 80) return { score, grade: "B", label: "Guarded" };
   if (score >= 65) return { score, grade: "C", label: "Moderate risk" };

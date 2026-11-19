@@ -7,11 +7,38 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import type { FormState } from "@/app/actions";
 
-export function SubmitButton({ children, className = "btn" }: { children: React.ReactNode; className?: string }) {
+/** Three dots that pulse in sequence while a form is submitting. */
+function Dots() {
+  return (
+    <span aria-hidden className="inline-flex gap-1">
+      {[0, 1, 2].map((i) => (
+        <span key={i} className="size-1.5 animate-bounce rounded-full bg-current" style={{ animationDelay: `${i * 120}ms`, animationDuration: "900ms" }} />
+      ))}
+    </span>
+  );
+}
+
+export function SubmitButton({
+  children,
+  className = "btn",
+  pendingLabel,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  /** Shown instead of the label while the action runs, e.g. "Scanning…". */
+  pendingLabel?: string;
+}) {
   const { pending } = useFormStatus();
   return (
     <button className={className} disabled={pending} aria-busy={pending}>
-      {pending ? "…" : children}
+      {pending ? (
+        <>
+          <Dots />
+          {pendingLabel}
+        </>
+      ) : (
+        children
+      )}
     </button>
   );
 }
@@ -32,8 +59,18 @@ export function ActionForm({
   return (
     <form action={formAction} className={className}>
       {children}
-      {state.error && <p role="alert" className="text-sm text-red-300">{state.error}</p>}
-      {state.message && <p role="status" className="text-sm text-teal-strong">{messages[state.message] ?? state.message}</p>}
+      {state.error && (
+        <p role="alert" className="flex animate-[pop_var(--duration-fast)_var(--ease-out-soft)] items-start gap-2 rounded-lg border border-red-400/40 bg-red-400/10 px-3 py-2 text-sm text-red-200">
+          <span aria-hidden>⚠</span>
+          {state.error}
+        </p>
+      )}
+      {state.message && (
+        <p role="status" className="flex animate-[pop_var(--duration-fast)_var(--ease-out-soft)] items-start gap-2 rounded-lg border border-teal/40 bg-teal/10 px-3 py-2 text-sm text-teal-strong">
+          <span aria-hidden>✓</span>
+          {messages[state.message] ?? state.message}
+        </p>
+      )}
     </form>
   );
 }
