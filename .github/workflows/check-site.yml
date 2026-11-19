@@ -1,0 +1,20 @@
+name: Check the live site's connection to Supabase
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ask the live site whether it can reach Supabase
+        run: |
+          for path in /api/health /register; do
+            echo "== $path"
+            curl -sS -A "hisn-check/1.0" -o "$RUNNER_TEMP/out" -w "HTTP %{http_code}\n" "https://hisn-delta.vercel.app$path"
+            [ "$path" = "/api/health" ] && cat "$RUNNER_TEMP/out" && echo
+          done
