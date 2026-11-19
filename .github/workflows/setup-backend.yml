@@ -130,7 +130,9 @@ jobs:
           . "$RUNNER_TEMP/lib.sh"
           sb "auth settings" -X PATCH -d "$(jq -n --arg u "$SITE_URL" '{mailer_autoconfirm:true, site_url:$u}')" \
             "https://api.supabase.com/v1/projects/$REF/config/auth" > /dev/null
-          echo "Email confirmation is off"
+          auto=$(sb "read auth settings" "https://api.supabase.com/v1/projects/$REF/config/auth" | jq -r '.mailer_autoconfirm')
+          echo "mailer_autoconfirm is now: $auto"
+          [ "$auto" = "true" ] || { echo "::error::Supabase did not keep the setting"; exit 1; }
 
       - name: Read the project keys
         run: |
@@ -146,17 +148,22 @@ jobs:
       - name: Test a sign-up with a made-up email
         run: |
           . "$RUNNER_TEMP/lib.sh"
-          email="hisn-check-$(openssl rand -hex 4)@gmail.com"
-          res=$(call "Supabase: test sign-up" -H "apikey: $ANON_KEY" -H "Content-Type: application/json" \
-            -d "$(jq -n --arg e "$email" '{email:$e, password:"CheckPass-12345"}')" "$SUPABASE_URL/auth/v1/signup")
-          token=$(echo "$res" | jq -r '.access_token // empty')
-          uid=$(echo "$res" | jq -r '.user.id // .id // empty')
-          if [ -n "$uid" ]; then
-            curl -sS -A "hisn-setup/1.0" -X DELETE -H "apikey: $SERVICE_KEY" -H "Authorization: Bearer $SERVICE_KEY" \
-              "$SUPABASE_URL/auth/v1/admin/users/$uid" > /dev/null || true
-          fi
-          [ -n "$token" ] || { echo "::error::Sign-up did not log the user in"; exit 1; }
-          echo "Sign-up works without email confirmation"
+          # Auth restarts after a settings change, so give it up to a minute.
+          for i in $(seq 1 7); do
+            email="hisn-check-$(openssl rand -hex 4)@gmail.com"
+            res=$(call "Supabase: test sign-up" -H "apikey: $ANON_KEY" -H "Content-Type: application/json" \
+              -d "$(jq -n --arg e "$email" '{email:$e, password:"CheckPass-12345"}')" "$SUPABASE_URL/auth/v1/signup" || true)
+            token=$(echo "$res" | jq -r '.access_token // empty' 2>/dev/null || true)
+            uid=$(echo "$res" | jq -r '.user.id // .id // empty' 2>/dev/null || true)
+            if [ -n "$uid" ]; then
+              curl -sS -A "hisn-setup/1.0" -X DELETE -H "apikey: $SERVICE_KEY" -H "Authorization: Bearer $SERVICE_KEY" \
+                "$SUPABASE_URL/auth/v1/admin/users/$uid" > /dev/null || true
+            fi
+            if [ -n "$token" ]; then echo "Sign-up works without email confirmation"; exit 0; fi
+            echo "Attempt $i: no session yet. Reply: $(echo "$res" | jq -c 'del(.access_token, .refresh_token) | {confirmed_at, email_confirmed_at, msg, error_code}' 2>/dev/null || echo "$res" | head -c 300)"
+            sleep 10
+          done
+          echo "::error::Sign-up still needs email confirmation"; exit 1
 
       - name: Save the keys in Vercel
         run: |
